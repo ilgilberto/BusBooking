@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BusBooking</string>
+    <string name="introducing">Per la ricerca di una fermata nelle vicinanze premi il tasto in alto a destra, per un accesso più veloce ma meno accurato premere \'SENZA GPS\'</string>
+    <string name="startButton">INIZIA</string>
+    <string name="startButtonNoGps">SENZA GPS</string>
+    <string name="selectStop">Scegli una fermata</string>
+    <string name="stopList">Sto caricando le fermate vicine</string>
+    <string name="close">Chiudi</string>
+    <string name="to">A</string>
+    <string name="notrips">non sono previste altre corse per oggi</string>
+</resources>
