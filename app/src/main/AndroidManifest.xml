@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="info.mandarini.busbooking">
-<!-- La ps è la solito con N-->
+    <!-- La ps è la solito con N -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_GPS" />
     <uses-permission android:name="android.permission.ACCESS_LOCATION" />
@@ -16,23 +16,26 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BusBooking">
         <activity
-            android:name=".Corsa"
-            android:exported="false"
-            android:screenOrientation="portrait"/>
-        <activity
-            android:name=".Linee"
-            android:exported="false"
-            android:screenOrientation="portrait"/>
-        <activity
-            android:name=".MainActivity"
+            android:name=".TitleActivity"
             android:exported="true"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".Corsa"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".Linee"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>
