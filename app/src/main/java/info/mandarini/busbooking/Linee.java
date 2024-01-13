@@ -61,7 +61,7 @@ public class Linee extends AppCompatActivity {
         display.setText(String.format("%s - %s in %s\nSeleziona la corsa che vuoi seguire",fermata,nome,dove));
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://mandarini.info/iorestoacasa/fermata/"+fermata;
+        String url = getString(R.string.linee_url)+fermata;
 
 // Request a string response from the provided URL.
         JsonArrayRequest jsonObjectRequest = new JsonArrayRequest
@@ -83,7 +83,7 @@ public class Linee extends AppCompatActivity {
                 });
 
         jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(
-                15000,
+                Integer.parseInt(getString(R.string.timeout)),
                 DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
                 DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 // Add the request to the RequestQueue.

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fermate_url" translatable="false">https://mandarini.info/iorestoacasa/fermate</string>
+    <string name="linee_url" translatable="false">https://mandarini.info/iorestoacasa/fermata/</string>
+    <string name="timeout" translatable="false">30000</string>
+</resources>

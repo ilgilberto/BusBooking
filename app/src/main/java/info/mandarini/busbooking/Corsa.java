@@ -80,7 +80,7 @@ public class Corsa extends AppCompatActivity {
 
     public void booking(final boolean makeCheck) {
         final long time = this.tempo;
-        String url = "https://mandarini.info/iorestoacasa/fermata/"+fermata+"/"+linea+"?autobus="+autobus;
+        String url = getString(R.string.linee_url)+fermata+"/"+linea+"?autobus="+autobus;
         RequestQueue queue = Volley.newRequestQueue(this);
 // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
