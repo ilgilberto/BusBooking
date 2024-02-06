@@ -4,13 +4,53 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:keepScreenOn="true"
     tools:context=".TitleActivity">
 
-    <ImageView
-        android:id="@+id/imageView"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/fig"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <TextView
+        android:id="@+id/latosuperiore"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_height="0dp"
+        android:layout_weight=".5"
+        android:background="#04AE1D"
+        />
+
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#11B635"
+        android:src="@mipmap/titolo" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:background="#3EDA91"
+        android:layout_height="0dp"
+        android:layout_weight=".5"
+        />
+
+</LinearLayout>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:contentDescription="@string/instructions"
+        android:onClick="downloadInstructions"
+        android:text="@string/instructions"
+        app:layout_constraintBottom_toBottomOf="@+id/fig"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:contentDescription="@string/privacy"
+        android:onClick="readPrivacyRules"
+        android:text="@string/privacy"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@mipmap/titolo" />
+        app:layout_constraintStart_toStartOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -2,6 +2,7 @@ package info.mandarini.busbooking;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 
 
@@ -58,7 +59,7 @@ public class Linee extends AppCompatActivity {
         String fermata = intent.getExtras().getString(FERMATA);
         String dove = intent.getExtras().getString(DOVE);
         TextView display = findViewById(R.id.titolo);
-        display.setText(String.format("%s - %s in %s\nSeleziona la corsa che vuoi seguire",fermata,nome,dove));
+        display.setText(String.format(getString(R.string.trip),fermata,nome,dove,System.getProperty("line.separator")));
 
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = getString(R.string.linee_url)+fermata;
@@ -91,9 +92,18 @@ public class Linee extends AppCompatActivity {
 
     }
 
+    @Override
+    public void onBackPressed() {
+        Intent mainIntent = new Intent(this,MainActivity.class);
+        this.startActivity(mainIntent);
+    }
+
     private void sceltaLinea(JSONArray response, String fermata, String nome, String dove) {
 
+        int bgc = ContextCompat.getColor(this, R.color.elenco_sfondo);
+        int cc = ContextCompat.getColor(this, R.color.elenco_colore);
         LinearLayout display = findViewById(R.id.fermate);
+        display.setBackgroundColor(bgc);
         try {
             for (int index = 0; index < response.length(); index++) {
 
@@ -126,31 +136,33 @@ public class Linee extends AppCompatActivity {
                         icon =  getDrawable(R.drawable.satellite);
                     }
                     if (icon != null) {
-                        corsaT.setCompoundDrawablesWithIntrinsicBounds(null,null,icon,null);}
+                        corsaT.setCompoundDrawablesWithIntrinsicBounds(null,null,icon,null);
+                        corsaT.setCompoundDrawablePadding(20);}
                     corsaT.setLayoutParams(new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT, ConstraintLayout.LayoutParams.WRAP_CONTENT));
-                    corsaT.setBackgroundColor(Color.WHITE);
+                    corsaT.setBackgroundColor(bgc);
+                    corsaT.setTextColor(cc);
                     corsaT.setPadding(20, 20, 200, 20);
                     corsaT.setTextSize(FONT_SIZE);
                     if (!TIPOLOGIA_ORARIA.NESSUNA_ALTRA_CORSA.name().equals(tipologiaOrario)) {
-                    corsaT.setText(linea + " " + ora);
-                    corsaT.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            if ("DA_SATELLITE".equals(tipologiaOrario)) {
-                            Toast.makeText(Linee.this, "Ti fornirò assitenza sull'arrivo del "+linea, Toast.LENGTH_LONG).show();
-                            Intent corsaIntent = new Intent(Linee.this,Corsa.class);
-                            corsaIntent.putExtra(Corsa.AUTOBUS,autobus);
-                            corsaIntent.putExtra(Corsa.LINEA,codiceLinea);
-                            corsaIntent.putExtra(Corsa.LINEA_DETTAGLIO,linea);
-                            corsaIntent.putExtra(Corsa.FERMATA,fermata);
-                            corsaIntent.putExtra(NOME,nome);
-                            corsaIntent.putExtra(DOVE,dove);
-                            startActivity(corsaIntent);}
-                            else {
-                                Toast.makeText(Linee.this, "Orario solo da tabellone, non da satellite", Toast.LENGTH_LONG).show();
+                        corsaT.setText(linea + " " + ora);
+                        corsaT.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                if ("DA_SATELLITE".equals(tipologiaOrario)) {
+                                    Toast.makeText(Linee.this, "Ti fornirò assitenza sull'arrivo del "+linea, Toast.LENGTH_LONG).show();
+                                    Intent corsaIntent = new Intent(Linee.this,Corsa.class);
+                                    corsaIntent.putExtra(Corsa.AUTOBUS,autobus);
+                                    corsaIntent.putExtra(Corsa.LINEA,codiceLinea);
+                                    corsaIntent.putExtra(Corsa.LINEA_DETTAGLIO,linea);
+                                    corsaIntent.putExtra(Corsa.FERMATA,fermata);
+                                    corsaIntent.putExtra(NOME,nome);
+                                    corsaIntent.putExtra(DOVE,dove);
+                                    startActivity(corsaIntent);}
+                                else {
+                                    Toast.makeText(Linee.this, "Orario solo da tabellone, non da satellite", Toast.LENGTH_LONG).show();
+                                }
                             }
-                        }
-                    });}
+                        });}
                     else {
                         corsaT.setTextSize(FONT_SIZE/1.5f);
                         corsaT.setText(linea + " "+getString(R.string.notrips));

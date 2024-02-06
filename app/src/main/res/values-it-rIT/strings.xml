@@ -9,4 +9,8 @@
     <string name="close">Chiudi</string>
     <string name="to">A</string>
     <string name="notrips">non sono previste altre corse per oggi</string>
+    <string name="instructions">Scarica le istruzioni</string>
+    <string name="trip">%s - %s in %s%sSeleziona la corsa che vuoi seguire"</string>
+    <string name="privacy">Leggi le norme sulla privacy</string>
+    <string name="browsernotfound">Nessuna applicazione disponibile per aprire pagina web. Installa un browser.</string>
 </resources>
