@@ -20,14 +20,24 @@
 
     <TextView
         android:id="@+id/titolo"
-        android:layout_width="wrap_content"
+        android:layout_width="300dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
         android:text="Description"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/header" />
+        app:layout_constraintStart_toEndOf="@+id/favorite"
+        app:layout_constraintTop_toBottomOf="@+id/header" />
 
+    <ImageButton
+        android:id="@+id/favorite"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:src="@drawable/favorite_off"
+        android:onClick="switchFavorite"
+        app:layout_constraintStart_toEndOf="@id/titolo"
+        app:layout_constraintTop_toBottomOf="@id/header" />
     <ScrollView
         android:id="@+id/display"
         android:layout_width="match_parent"

@@ -31,6 +31,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Collections;
+import java.util.List;
+
+import info.mandarini.busbooking.persistence.entities.Fermata;
+import info.mandarini.busbooking.persistence.repositories.FavoritesDataBase;
 import info.mandarini.busbooking.threads.Cronometro;
 
 public class MainActivity extends AppCompatActivity implements LocationListener {
@@ -118,7 +123,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
                     @Override
                     public void onResponse(JSONArray response) {
-                         sceltaFermata(response);
+                         writeFermate(response);
                     }
                 }, new Response.ErrorListener() {
 
@@ -131,21 +136,48 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
 // Add the request to the RequestQueue.
         queue.add(jsonObjectRequest);
-
-
     }
 
-    private void sceltaFermata(JSONArray response) {
+    /**
+     * entry point preferiti
+     * @param view
+     */
+    public void favorites(View view) {
+        writeFermate(null);
+    }
 
+    /**
+     * Scrive nel display l'elenco delle fermate partendo
+     * da un json o andando a DB
+     * @param json
+     */
+    private void writeFermate(JSONArray json) {
         LinearLayout display = findViewById(R.id.fermate);
         display.removeAllViews();
+        List<Fermata> fermate = null;
+        if (json == null) {
+            fermate = FavoritesDataBase.getInstance(this).fermataDao().selectAll();}
         TextView helper = findViewById(R.id.helper);
         helper.setVisibility(View.GONE);
-        TextView desc = new TextView(MainActivity.this);
-        desc.setText(R.string.selectStop);
-        int ec = ContextCompat.getColor(this, R.color.elenco_sfondo);
-        desc.setTextColor(ec);
-        display.addView(desc);
+        if (fermate == null || !fermate.isEmpty()) {
+            TextView desc = new TextView(MainActivity.this);
+            desc.setText(R.string.selectStop);
+            int ec = ContextCompat.getColor(this, R.color.elenco_sfondo);
+            desc.setTextColor(ec);
+            display.addView(desc);
+            if (json != null) {
+                writeJson(json,display); }
+            else if (fermate != null){
+                writeTuples(display, fermate);
+            }
+        }
+        else {
+            helper.setVisibility(View.VISIBLE);
+            helper.setText(R.string.favoriteEmpty);
+        }
+    }
+
+    private void writeJson(JSONArray response, LinearLayout display) {
         try {
             for (int index = 0; index < response.length(); index++) {
 
@@ -180,8 +212,29 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
     }
 
+    private void writeTuples(LinearLayout display, List<Fermata> fermate) {
+        for (Fermata fermata : fermate) {
+            TextView t = new TextView(MainActivity.this);
+            final String codiceFermata = fermata.codice;
+            final String denominazione = fermata.descrizione;
+            final String ubicazione = fermata.ubicazione;
+            t.setText(codiceFermata + "-" + denominazione);
+            int bgc = ContextCompat.getColor(this, R.color.elenco_sfondo);
+            t.setBackgroundColor(bgc);
+            int cc = ContextCompat.getColor(this, R.color.elenco_colore);
+            t.setTextColor(cc);
+            t.setPadding(20, 20, 20, 20);
+            t.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    goToStopDetail(MainActivity.this, codiceFermata, denominazione, ubicazione);
+                }
+            });
+            display.addView(t);
+        }
+    }
+
     static void goToStopDetail(Context context, String codiceFermata, String denominazione, String ubicazione) {
-        Cronometro.clear();
         Toast.makeText(context, "Caricamento dati fermata", Toast.LENGTH_LONG).show();
         Intent lineeIntent = new Intent(context,Linee.class);
         lineeIntent.putExtra(Linee.FERMATA, codiceFermata);

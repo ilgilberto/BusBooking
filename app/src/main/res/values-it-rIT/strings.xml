@@ -2,8 +2,10 @@
 <resources>
     <string name="app_name">BusBooking</string>
     <string name="introducing">Per la ricerca di una fermata nelle vicinanze premi il tasto in alto a destra, per un accesso più veloce ma meno accurato premere \'SENZA GPS\'</string>
+    <string name="favoriteEmpty">Nessun preferito. Per aggiungerli seleziona una fermata e fai tap sulla stella.</string>
     <string name="startButton">INIZIA</string>
     <string name="startButtonNoGps">SENZA GPS</string>
+    <string name="startButtonFavorites">Preferiti</string>
     <string name="selectStop">Scegli una fermata</string>
     <string name="stopList">Sto caricando le fermate vicine</string>
     <string name="close">Chiudi</string>

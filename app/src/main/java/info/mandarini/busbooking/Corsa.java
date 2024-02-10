@@ -2,12 +2,10 @@ package info.mandarini.busbooking;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -16,14 +14,10 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.JsonRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import info.mandarini.busbooking.threads.Cronometro;
 
@@ -33,6 +27,7 @@ public class Corsa extends AppCompatActivity {
     public final static String LINEA_DETTAGLIO = "lineaD";
     public final static String AUTOBUS = "Autobus";
     public final static String FERMATA = "stop";
+    public static final int MAX_FERMATA_LENGTH = 20;
 
     public String linea;
     public String dettaglio;
@@ -60,7 +55,7 @@ public class Corsa extends AppCompatActivity {
         TextView header = findViewById(R.id.descrizioneVeicoloInArrivo);
         header.setText(dettaglio+"\n"+autobus);
         TextView busStop = findViewById(R.id.fermata);
-        busStop.setText(getString(R.string.to)+ " "+fermata+"-"+nomeFermata);
+        busStop.setText(getString(R.string.to)+ " "+fermata+"-"+cut(nomeFermata, MAX_FERMATA_LENGTH));
 
         this.arrivingSound = new MediaPlayer().create(this,R.raw.arrivo);
         this.updateSound = new MediaPlayer().create(this,R.raw.suono);
@@ -130,17 +125,6 @@ public class Corsa extends AppCompatActivity {
             }
         }
 
-    private void check(long totale) {
-        if (Math.abs(totale-this.tempo)>60) {
-            this.tempo = totale;
-            updateSound.start();
-            Toast.makeText(Corsa.this, "Aggiornamento del tempo stimato", Toast.LENGTH_SHORT).show();
-        }
-        showTime(this,this.tempo);
-        Cronometro cron = new Cronometro(this);
-        cron.play();
-    }
-
     public static void showTime(AppCompatActivity context, long totale) {
         TextView timer = context.findViewById(R.id.timer);
 
@@ -157,5 +141,27 @@ public class Corsa extends AppCompatActivity {
             timer.setTextColor(Color.BLUE);
             timer.setText(ore + ":" + minuti + ":" + secondi);
         }
+    }
+
+    private void check(long totale) {
+        if (Math.abs(totale-this.tempo)>60) {
+            this.tempo = totale;
+            updateSound.start();
+            Toast.makeText(Corsa.this, "Aggiornamento del tempo stimato", Toast.LENGTH_SHORT).show();
+        }
+        showTime(this,this.tempo);
+        Cronometro cron = new Cronometro(this);
+        cron.play();
+    }
+
+    private String cut(String value, int max) {
+        if (StringUtils.isNotBlank(value)) {
+            if (value.length() > max) {
+                return value.substring(0, max) + "...";
+            } else {
+                return value;
+            }
+        }
+        return "";
     }
 }

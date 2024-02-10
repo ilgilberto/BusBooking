@@ -3,7 +3,6 @@ package info.mandarini.busbooking;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
-import androidx.core.content.res.ResourcesCompat;
 
 
 import android.content.Intent;
@@ -11,8 +10,8 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -28,13 +27,13 @@ import com.android.volley.toolbox.Volley;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.DrawableImageViewTarget;
 
-import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import info.mandarini.busbooking.persistence.entities.Fermata;
+import info.mandarini.busbooking.persistence.repositories.FavoritesDataBase;
+import info.mandarini.busbooking.threads.Cronometro;
 
 public class Linee extends AppCompatActivity {
 
@@ -43,6 +42,10 @@ public class Linee extends AppCompatActivity {
     public static final String DOVE = "dove";
 
     private static final int FONT_SIZE = 30;
+
+    private boolean isFavorite = false;
+
+    private Fermata record;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +61,19 @@ public class Linee extends AppCompatActivity {
         String nome = intent.getExtras().getString(NOME);
         String fermata = intent.getExtras().getString(FERMATA);
         String dove = intent.getExtras().getString(DOVE);
+        record = FavoritesDataBase.getInstance(this).fermataDao().getFromCodice(fermata);
+        if (record == null) {
+            isFavorite = false;
+        record = new Fermata();
+        record.codice = fermata;
+        record.descrizione=nome;
+        record.ubicazione=dove;}
+        else {
+            isFavorite = true;
+        }
+        imageFavorite();
+
+
         TextView display = findViewById(R.id.titolo);
         display.setText(String.format(getString(R.string.trip),fermata,nome,dove,System.getProperty("line.separator")));
 
@@ -90,6 +106,12 @@ public class Linee extends AppCompatActivity {
 // Add the request to the RequestQueue.
         queue.add(jsonObjectRequest);
 
+    }
+
+    @Override
+    public void  onResume() {
+        super.onResume();
+        Cronometro.clear();
     }
 
     @Override
@@ -177,4 +199,26 @@ public class Linee extends AppCompatActivity {
         }
 
     }
+
+    public void switchFavorite(View view) {
+         isFavorite = !isFavorite;
+         imageFavorite();
+         if (isFavorite) {
+             record.uid = (int)FavoritesDataBase.getInstance(this).fermataDao().save(record);
+         }
+         else {
+             FavoritesDataBase.getInstance(this).fermataDao().delete(record);
+         }
+    }
+
+    public void imageFavorite() {
+        ImageButton b = findViewById(R.id.favorite);
+        if (isFavorite) {
+            b.setImageResource(R.drawable.favorite_on);
+        }
+        else {
+            b.setImageResource(R.drawable.favorite_off);
+        }
+    }
+
     private enum TIPOLOGIA_ORARIA {DA_SATELLITE,PREVISTO,NESSUNA_ALTRA_CORSA}}

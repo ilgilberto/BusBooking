@@ -1,8 +1,10 @@
 <resources>
     <string name="app_name">BusBooking</string>
     <string name="introducing">To search for a nearby stop press the button at the top right, for faster but less accurate access press \'WITHOUT GPS\'</string>
+    <string name="favoriteEmpty">No favorites</string>
     <string name="startButton">START WITH GPS</string>
     <string name="startButtonNoGps">NO GPS</string>
+    <string name="startButtonFavorites">FAVORITES</string>
     <string name="selectStop">Select bus stop</string>
     <string name="stopList">Wait for the stop list</string>
     <string name="notrips">no other trips are scheduled for today</string>
