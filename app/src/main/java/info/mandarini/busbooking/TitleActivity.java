@@ -66,7 +66,7 @@ public class TitleActivity extends AppCompatActivity {
             delay = 5000;
         }
 
-        if (Build.VERSION.SDK_INT > 29) {
+        if (Build.VERSION.SDK_INT > 28) {
 
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_MEDIA_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 this.flagOK=false;
