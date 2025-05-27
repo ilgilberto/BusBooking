@@ -4,6 +4,9 @@
     <string name="linee_url" translatable="false">https://mandarini.info/iorestoacasa/fermata/</string>
     <string name="privacy_url" translatable="false">https://mandarini.info/apk/privacy.html</string>
     <string name="timeout" translatable="false">30000</string>
+    <string name="inArrivingText" translatable="false">60</string>
+    <string name="inArrivingBeep" translatable="false">120</string>
+    <string name="refreshTime" translatable="false">30</string>
     <string name="instructions_IT" translatable="false">istruzioni_busbooking_v1.0.pdf</string>
     <string name="instructions_EN" translatable="false">instructions_busbooking_v1.0.pdf</string>
 </resources>

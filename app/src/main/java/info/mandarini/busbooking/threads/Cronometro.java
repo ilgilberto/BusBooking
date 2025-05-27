@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import info.mandarini.busbooking.Corsa;
+import info.mandarini.busbooking.R;
 
 public class Cronometro extends Thread implements Runnable {
 
@@ -27,10 +28,11 @@ public class Cronometro extends Thread implements Runnable {
 
     @Override
         public void run() {
+            int refreshTime = Integer.parseInt(context.getString(R.string.refreshTime));
             try {
                 sleep(1000);
                 this.context.tempo--;
-                if (volte>30 || FORCE_CHECK) {
+                if (volte>refreshTime || FORCE_CHECK) {
                     FORCE_CHECK = false;
                     context.booking(true);
                 }
@@ -40,7 +42,10 @@ public class Cronometro extends Thread implements Runnable {
                     context.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Corsa.showTime(context, item);
+                            Corsa.showTime(context, item, context.beep,
+                                    Integer.parseInt(context.getString(R.string.inArrivingBeep)),
+                                    Integer.parseInt(context.getString(R.string.inArrivingText)),
+                                    context.findViewById(R.id.stopBeep));
                         }
                     });
 

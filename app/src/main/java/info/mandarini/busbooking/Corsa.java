@@ -35,6 +35,7 @@ public class Corsa extends AppCompatActivity {
     public String fermata;
     public String nomeFermata;
     public String doveFermata;
+    public boolean beep;
 
     public static MediaPlayer arrivingSound;
     public static MediaPlayer updateSound;
@@ -65,9 +66,26 @@ public class Corsa extends AppCompatActivity {
 
                  @Override
                  public void onClick(View view) {
+                     if (beep && arrivingSound != null) {
+                         arrivingSound.stop();}
                      MainActivity.goToStopDetail(Corsa.this,fermata, nomeFermata,doveFermata);
                  }
              }
+        );
+
+        beep = true;
+        findViewById(R.id.stopBeep).setVisibility(View.GONE);
+        findViewById(R.id.stopBeep).setOnClickListener(
+                new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View view) {
+                        findViewById(R.id.stopBeep).setVisibility(View.GONE);
+                       beep = false;
+                       if (arrivingSound != null) {
+                            arrivingSound.stop();}
+                    }
+                }
         );
         Cronometro.clear();
         booking(false);
@@ -112,7 +130,10 @@ public class Corsa extends AppCompatActivity {
 
             if (!makeCheck) {
                 this.tempo = totale;
-            showTime(this,totale);
+            showTime(this,totale,beep,
+                    Integer.parseInt(getString(R.string.inArrivingBeep)),
+                    Integer.parseInt(getString(R.string.inArrivingText)),
+                    findViewById(R.id.stopBeep));
             Cronometro cron = new Cronometro(this);
             cron.play();}
             else {
@@ -125,15 +146,18 @@ public class Corsa extends AppCompatActivity {
             }
         }
 
-    public static void showTime(AppCompatActivity context, long totale) {
+    public static void showTime(AppCompatActivity context, long totale,boolean beep
+                                 ,long inArrivingBeep,long inArrivingText,View stopButton) {
         TextView timer = context.findViewById(R.id.timer);
 
-        if (totale< 120 && arrivingSound != null) {
+        if (beep && totale<inArrivingBeep && arrivingSound != null) {
            arrivingSound.start();
+            stopButton.setVisibility(View.VISIBLE);
 ;        }
-        if (totale < 60) {
+        if (totale < inArrivingText) {
             timer.setText("IN ARRIVO");
             timer.setTextColor(Color.GREEN);
+            stopButton.setVisibility(View.GONE);
         } else {
             String ore = String.format("%02d", totale / 3600L);
             String minuti = String.format("%02d", (totale % 3600) / 60L);
@@ -149,7 +173,10 @@ public class Corsa extends AppCompatActivity {
             updateSound.start();
             Toast.makeText(Corsa.this, "Aggiornamento del tempo stimato", Toast.LENGTH_SHORT).show();
         }
-        showTime(this,this.tempo);
+        showTime(this,this.tempo,this.beep,
+                Integer.parseInt(getString(R.string.inArrivingBeep)),
+                Integer.parseInt(getString(R.string.inArrivingText)),
+                findViewById(R.id.stopBeep));
         Cronometro cron = new Cronometro(this);
         cron.play();
     }

@@ -7,6 +7,7 @@
     <string name="startButtonFavorites">FAVORITES</string>
     <string name="selectStop">Select bus stop</string>
     <string name="stopList">Wait for the stop list</string>
+    <string name="stopBeep">Ok, thanks !</string>
     <string name="notrips">no other trips are scheduled for today</string>
     <string name="close">Close</string>
     <string name="to">To</string>
@@ -14,4 +15,5 @@
     <string name="trip">%s - %s in %s%sSelect the trip you want to follow"</string>
     <string name="privacy">Read the privacy policy</string>
     <string name="browsernotfound">No application can handle this request. Please install a webbrowser</string>
+    <string name="atTheStopText">at the stop</string>
 </resources>
