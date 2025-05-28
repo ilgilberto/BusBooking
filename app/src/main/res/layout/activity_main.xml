@@ -5,9 +5,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bcolor_helper"
-    android:screenOrientation="portrait"
     tools:context=".MainActivity">
 
+    <!-- Guideline verticale a 20dp -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guidelineStart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_begin="20dp" />
 
     <ImageView
         android:id="@+id/header"
@@ -20,20 +26,17 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@mipmap/busbologna" />
 
-
-
     <TextView
         android:id="@+id/helper"
         android:layout_width="240dp"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="@id/header"
-        app:layout_constraintTop_toBottomOf="@id/header"
-        android:justificationMode="inter_word"
-        android:layout_marginLeft="5dp"
         android:fontFamily="cursive"
         android:textSize="30sp"
         android:textColor="@color/color_helper"
-        android:text="@string/introducing" />
+        android:text="@string/introducing"
+        android:justificationMode="inter_word"
+        app:layout_constraintStart_toStartOf="@id/guidelineStart"
+        app:layout_constraintTop_toBottomOf="@id/header" />
 
     <ScrollView
         android:id="@+id/display"
@@ -41,7 +44,7 @@
         android:layout_height="667dp"
         android:layout_marginTop="1dp"
         android:scrollbarStyle="insideInset"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toStartOf="@id/guidelineStart"
         app:layout_constraintTop_toBottomOf="@id/header">
 
         <LinearLayout
@@ -50,7 +53,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical" />
     </ScrollView>
-
 
     <Button
         android:id="@+id/button"
@@ -82,6 +84,5 @@
         android:text="@string/startButtonNoGps"
         app:layout_constraintTop_toBottomOf="@+id/favorites"
         app:layout_constraintStart_toStartOf="@id/favorites" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

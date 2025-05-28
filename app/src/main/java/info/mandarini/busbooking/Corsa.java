@@ -1,14 +1,22 @@
 package info.mandarini.busbooking;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -16,6 +24,9 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -39,6 +50,19 @@ public class Corsa extends AppCompatActivity {
 
     public static MediaPlayer arrivingSound;
     public static MediaPlayer updateSound;
+
+    private ImageView bannerImageView;
+
+    private Runnable slideshowRunnable;
+    private int currentIndex = 0;
+    private final int delayMillis = 5000; // configurabile
+    private final String baseUrlBanner = "https://conoscenzacreativa.it/banner/imm";
+    private final String linkUrlBanner = "https://www.conoscenzacreativa.it/booksite/portfolio";
+    private final String extensionImageBanner = ".jpg";
+    private boolean atLeastOneImageFound = false;
+
+    private Handler handler = new Handler(Looper.getMainLooper());
+    private final int maxTries = 20;
 
     public long tempo = 0;
 
@@ -89,6 +113,65 @@ public class Corsa extends AppCompatActivity {
         );
         Cronometro.clear();
         booking(false);
+
+        bannerImageView = findViewById(R.id.bannerImageView);
+        bannerImageView.setOnClickListener(view -> {
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(linkUrlBanner));
+            view.getContext().startActivity(browserIntent);
+        });
+        // Avvia lo slideshow
+        startSlideshow();
+    }
+
+
+    private void startSlideshow() {
+
+        slideshowRunnable = new Runnable() {
+            @Override
+            public void run() {
+                String url = baseUrlBanner + currentIndex + extensionImageBanner;
+                Log.d("SLIDESHOW", "Carico immagine: " + url);
+
+                Glide.with(Corsa.this)
+                        .load(url)
+                        .into(new CustomTarget<Drawable>() {
+                            @Override
+                            public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition) {
+                                bannerImageView.setImageDrawable(resource);
+                                bannerImageView.setVisibility(ImageView.VISIBLE);
+                                advanceIndex();
+                                handler.postDelayed(slideshowRunnable, delayMillis); // delay solo su successo
+                            }
+
+                            @Override
+                            public void onLoadCleared(@Nullable Drawable placeholder) {
+                                // Non serve gestire
+                            }
+
+                            @Override
+                            public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                                Log.d("SLIDESHOW", "Immagine non trovata: " + url);
+                                currentIndex = 0;
+                                handler.post(slideshowRunnable); // Nessun delay su errore
+                            }
+                        });
+            }
+        };
+
+        handler.post(slideshowRunnable); // avvia il ciclo
+    }
+
+    private void advanceIndex() {
+        currentIndex++;
+        if (currentIndex >= maxTries) {
+            currentIndex = 0;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        handler.removeCallbacks(slideshowRunnable);
     }
 
     public void booking(final boolean makeCheck) {
@@ -157,7 +240,7 @@ public class Corsa extends AppCompatActivity {
         if (totale < inArrivingText) {
             timer.setText("IN ARRIVO");
             timer.setTextColor(Color.GREEN);
-            stopButton.setVisibility(View.GONE);
+            //stopButton.setVisibility(View.GONE);
         } else {
             String ore = String.format("%02d", totale / 3600L);
             String minuti = String.format("%02d", (totale % 3600) / 60L);
