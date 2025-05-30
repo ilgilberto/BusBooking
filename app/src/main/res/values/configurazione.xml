@@ -9,4 +9,11 @@
     <string name="refreshTime" translatable="false">30</string>
     <string name="instructions_IT" translatable="false">istruzioni_busbooking_v1.0.pdf</string>
     <string name="instructions_EN" translatable="false">instructions_busbooking_v1.0.pdf</string>
+
+    #BANNER
+    <string name="delayMillisBanner" translatable="false">5000</string>
+    <string name="baseUrlBanner" translatable="false">https://conoscenzacreativa.it/banner/imm</string>
+    <string name="linkUrlBanner" translatable="false">https://www.conoscenzacreativa.it/booksite/portfolio</string>
+    <string name="extensionImageBanner" translatable="false">.jpg</string>
+    <string name="cacheLifeHours" translatable="false">24</string>
 </resources>

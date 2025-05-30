@@ -27,6 +27,7 @@ import com.android.volley.toolbox.Volley;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
+import com.bumptech.glide.signature.ObjectKey;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -55,12 +56,13 @@ public class Corsa extends AppCompatActivity {
 
     private Runnable slideshowRunnable;
     private int currentIndex = 0;
-    private final int delayMillis = 5000; // configurabile
-    private final String baseUrlBanner = "https://conoscenzacreativa.it/banner/imm";
-    private final String linkUrlBanner = "https://www.conoscenzacreativa.it/booksite/portfolio";
-    private final String extensionImageBanner = ".jpg";
+    // Campi banner (verranno inizializzati nel onCreate quando il Context è stato a sua volta inizializzato)
+    private int delayMillis = 0;
+    private String baseUrlBanner =  "https://conoscenzacreativa.it/banner/imm";
+    private String linkUrlBanner = "https://www.conoscenzacreativa.it/booksite/portfolio";
+    private String extensionImageBanner = ".jpg";
     private boolean atLeastOneImageFound = false;
-
+    private long cacheLifeInHours = 0;
     private Handler handler = new Handler(Looper.getMainLooper());
     private final int maxTries = 20;
 
@@ -70,6 +72,7 @@ public class Corsa extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_corsa);
+
         Intent intent = getIntent();
         linea = intent.getExtras().getString(LINEA);
         dettaglio = intent.getExtras().getString(LINEA_DETTAGLIO);
@@ -114,6 +117,16 @@ public class Corsa extends AppCompatActivity {
         Cronometro.clear();
         booking(false);
 
+        // ____________________________________________
+        // Implementazione banner
+
+        // inizializzaione campi
+        delayMillis = Integer.parseInt(getString(R.string.delayMillisBanner));
+        cacheLifeInHours = Long.parseLong(getString(R.string.cacheLifeHours));
+        baseUrlBanner =  getString(R.string.baseUrlBanner);
+        linkUrlBanner = getString(R.string.linkUrlBanner);
+        extensionImageBanner = getString(R.string.extensionImageBanner);
+        // gestione
         bannerImageView = findViewById(R.id.bannerImageView);
         bannerImageView.setOnClickListener(view -> {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(linkUrlBanner));
@@ -130,10 +143,12 @@ public class Corsa extends AppCompatActivity {
             @Override
             public void run() {
                 String url = baseUrlBanner + currentIndex + extensionImageBanner;
+                long sixHourSignature = System.currentTimeMillis() / (cacheLifeInHours * 60 * 60 * 1000);
                 Log.d("SLIDESHOW", "Carico immagine: " + url);
 
                 Glide.with(Corsa.this)
                         .load(url)
+                        .signature(new ObjectKey(sixHourSignature))  // Cambia ogni 6 ore
                         .into(new CustomTarget<Drawable>() {
                             @Override
                             public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition) {
