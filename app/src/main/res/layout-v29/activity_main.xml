@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bcolor_helper"
+    tools:context=".MainActivity">
+
+    <!-- Guideline verticale a 20dp -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guidelineStart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_begin="20dp" />
+
+    <ImageView
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="68dp"
+        android:adjustViewBounds="true"
+        android:paddingTop="0dp"
+        android:scaleType="fitXY"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@mipmap/busbologna" />
+
+    <TextView
+        android:id="@+id/helper"
+        android:layout_width="240dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="cursive"
+        android:textSize="30sp"
+        android:textColor="@color/color_helper"
+        android:text="@string/introducing"
+        android:justificationMode="inter_word"
+        app:layout_constraintStart_toStartOf="@id/guidelineStart"
+        app:layout_constraintTop_toBottomOf="@id/header" />
+
+    <ScrollView
+        android:id="@+id/display"
+        android:layout_width="240dp"
+        android:layout_height="667dp"
+        android:layout_marginTop="1dp"
+        android:scrollbarStyle="insideInset"
+        app:layout_constraintStart_toStartOf="@id/guidelineStart"
+        app:layout_constraintTop_toBottomOf="@id/header">
+
+        <LinearLayout
+            android:id="@+id/fermate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="113dp"
+        android:layout_height="84dp"
+        android:layout_marginStart="20dp"
+        android:onClick="gps"
+        android:text="@string/startButton"
+        android:textSize="14sp"
+        app:layout_constraintStart_toEndOf="@id/display"
+        app:layout_constraintTop_toBottomOf="@id/header" />
+
+    <Button
+        android:id="@+id/favorites"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="88dp"
+        android:onClick="favorites"
+        android:text="@string/startButtonFavorites"
+        app:layout_constraintTop_toBottomOf="@+id/button"
+        app:layout_constraintStart_toStartOf="@id/button" />
+
+    <Button
+        android:id="@+id/NOGPS"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="88dp"
+        android:onClick="nogps"
+        android:text="@string/startButtonNoGps"
+        app:layout_constraintTop_toBottomOf="@+id/favorites"
+        app:layout_constraintStart_toStartOf="@id/favorites" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

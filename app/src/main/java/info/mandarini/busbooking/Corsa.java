@@ -2,14 +2,18 @@ package info.mandarini.busbooking;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowMetrics;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -17,6 +21,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -71,7 +76,35 @@ public class Corsa extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        int width, height;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // API 30+
+            WindowMetrics metrics = getWindowManager().getCurrentWindowMetrics();
+            Rect bounds = metrics.getBounds();
+            width = bounds.width();
+            height = bounds.height();
+        } else {
+            // API < 30
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            width = displayMetrics.widthPixels;
+            height = displayMetrics.heightPixels;
+        }
+
         setContentView(R.layout.activity_corsa);
+
+        TextView myTextView = findViewById(R.id.timer);
+
+        ConstraintLayout.LayoutParams params =
+                (ConstraintLayout.LayoutParams) myTextView.getLayoutParams();
+
+        if (height<2000) {
+        // Valore tra 0.0 (alto) e 1.0 (basso), ad esempio:
+        params.verticalBias = 0f;}
+
+        myTextView.setLayoutParams(params);
 
         Intent intent = getIntent();
         linea = intent.getExtras().getString(LINEA);
@@ -128,6 +161,12 @@ public class Corsa extends AppCompatActivity {
         extensionImageBanner = getString(R.string.extensionImageBanner);
         // gestione
         bannerImageView = findViewById(R.id.bannerImageView);
+        float density = getResources().getDisplayMetrics().density;
+        int withDp = Math.round(Integer.parseInt(getString(R.string.widthImageBanner))/density);
+        int heightDp = Math.round(Integer.parseInt(getString(R.string.heightImageBanner))/density);
+        Log.d("ECCOLO",""+heightDp);
+        bannerImageView.setMinimumWidth(withDp);
+        bannerImageView.setMinimumHeight(height);
         bannerImageView.setOnClickListener(view -> {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(linkUrlBanner));
             view.getContext().startActivity(browserIntent);
@@ -148,7 +187,7 @@ public class Corsa extends AppCompatActivity {
 
                 Glide.with(Corsa.this)
                         .load(url)
-                        .signature(new ObjectKey(sixHourSignature))  // Cambia ogni 6 ore
+                        .signature(new ObjectKey(sixHourSignature))
                         .into(new CustomTarget<Drawable>() {
                             @Override
                             public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition) {

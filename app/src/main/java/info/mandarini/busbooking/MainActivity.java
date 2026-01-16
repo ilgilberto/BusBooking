@@ -10,12 +10,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowMetrics;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -50,6 +54,22 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        int width, height;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // API 30+
+            WindowMetrics metrics = getWindowManager().getCurrentWindowMetrics();
+            Rect bounds = metrics.getBounds();
+            width = bounds.width();
+            height = bounds.height();
+        } else {
+            // API < 30
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            width = displayMetrics.widthPixels;
+            height = displayMetrics.heightPixels;
+        }
+
         setContentView(R.layout.activity_main);
     }
 

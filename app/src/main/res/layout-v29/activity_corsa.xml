@@ -26,7 +26,7 @@
             android:id="@+id/descrizioneVeicoloInArrivo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="5dp"
+            android:layout_marginLeft="15dp"
             android:text="AUTOBUS XX CON PEDANA"
             android:textColor="#5D4037"
             android:textSize="50dp"
@@ -44,7 +44,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/autobusW"
-        app:layout_constraintVertical_bias="0.22" />
+        app:layout_constraintVertical_bias="0.2" />
 
     <TextView
         android:id="@+id/fermata"
@@ -59,7 +59,7 @@
     <ImageView
         android:id="@+id/bannerImageView"
         android:layout_width="0dp"
-        android:layout_height="137dp"
+        android:layout_height="150dp"
         android:layout_marginBottom="0dp"
         android:visibility="gone"
         android:adjustViewBounds="true"

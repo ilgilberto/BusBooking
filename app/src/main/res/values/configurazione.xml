@@ -16,4 +16,6 @@
     <string name="linkUrlBanner" translatable="false">https://www.conoscenzacreativa.it/booksite/portfolio</string>
     <string name="extensionImageBanner" translatable="false">.jpg</string>
     <string name="cacheLifeHours" translatable="false">24</string>
+    <string name="widthImageBanner" translatable="false">1080</string>
+    <string name="heightImageBanner" translatable="false">410</string>
 </resources>
