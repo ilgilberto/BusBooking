@@ -238,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             final String codiceFermata = fermata.codice;
             final String denominazione = fermata.descrizione;
             final String ubicazione = fermata.ubicazione;
-            t.setText(codiceFermata + "-" + denominazione);
+            t.setText(Utils.print(fermata));
             int bgc = ContextCompat.getColor(this, R.color.elenco_sfondo);
             t.setBackgroundColor(bgc);
             int cc = ContextCompat.getColor(this, R.color.elenco_colore);
@@ -247,11 +247,16 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             t.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    goToStopDetail(MainActivity.this, codiceFermata, denominazione, ubicazione);
+                    favoritesPopUp(MainActivity.this, fermata);
                 }
             });
             display.addView(t);
         }
+    }
+
+    private void favoritesPopUp(MainActivity mainActivity, Fermata fermata) {
+        // TODO OPENPOPUP
+        goToStopDetail(MainActivity.this, fermata.codice, fermata.descrizione, fermata.ubicazione);
     }
 
     static void goToStopDetail(Context context, String codiceFermata, String denominazione, String ubicazione) {

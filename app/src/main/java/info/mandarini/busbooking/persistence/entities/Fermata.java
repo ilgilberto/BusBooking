@@ -19,6 +19,9 @@ public class Fermata {
         @ColumnInfo(name = "UBICAZIONE")
         public String ubicazione;
 
+        @ColumnInfo(name = "ALIAS")
+        public String alias;
+
 
         @ColumnInfo(name = "last_name")
         public String lastName;

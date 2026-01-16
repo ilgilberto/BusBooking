@@ -204,6 +204,7 @@ public class Linee extends AppCompatActivity {
          isFavorite = !isFavorite;
          imageFavorite();
          if (isFavorite) {
+             record.alias = Utils.print(record);
              record.uid = (int)FavoritesDataBase.getInstance(this).fermataDao().save(record);
          }
          else {
