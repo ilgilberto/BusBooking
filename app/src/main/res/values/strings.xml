@@ -16,4 +16,11 @@
     <string name="privacy">Read the privacy policy</string>
     <string name="browsernotfound">No application can handle this request. Please install a webbrowser</string>
     <string name="atTheStopText">at the stop</string>
+    <!-- Favorites popup -->
+    <string name="favorite_popup_title">Favorite Stop</string>
+    <string name="favorite_alias_hint">Alias</string>
+    <string name="favorite_alias_confirm">Confirm</string>
+    <string name="favorite_alias_saved">Alias saved</string>
+    <string name="favorite_go_to_stop">Go to Stop</string>
+
 </resources>

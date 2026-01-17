@@ -4,6 +4,7 @@ import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import java.util.List;
 
@@ -26,6 +27,20 @@ public interface FermateDao {
 
     @Query("SELECT * FROM FERMATE WHERE CODICE_FERMATA=:codice")
     Fermata getFromCodice(String codice);
+
+    /**
+     * Aggiorna l'alias della fermata identificata dal codice.
+     *
+     * @return numero di righe aggiornate (0 se la fermata non esiste)
+     */
+    @Query("UPDATE FERMATE SET ALIAS=:alias WHERE CODICE_FERMATA=:codice")
+    int updateAlias(String codice, String alias);
+
+    /**
+     * Update generico (non strettamente necessario per l'alias, ma utile in futuro).
+     */
+    @Update
+    int update(Fermata fermata);
 
 
 }

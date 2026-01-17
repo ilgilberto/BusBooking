@@ -17,4 +17,11 @@
     <string name="privacy">Leggi le norme sulla privacy</string>
     <string name="browsernotfound">Nessuna applicazione disponibile per aprire pagina web. Installa un browser.</string>
     <string name="atTheStopText">alla fermata</string>
+    <!-- Favorites popup -->
+    <string name="favorite_popup_title">Fermata preferita</string>
+    <string name="favorite_alias_hint">Alias</string>
+    <string name="favorite_alias_confirm">Conferma</string>
+    <string name="favorite_alias_saved">Alias salvato</string>
+    <string name="favorite_go_to_stop">Vai alla fermata</string>
+
 </resources>

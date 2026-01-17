@@ -16,10 +16,15 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowMetrics;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,7 +40,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Collections;
+import androidx.appcompat.app.AlertDialog;
 import java.util.List;
 
 import info.mandarini.busbooking.persistence.entities.Fermata;
@@ -255,9 +260,78 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     private void favoritesPopUp(MainActivity mainActivity, Fermata fermata) {
-        // TODO OPENPOPUP
-        goToStopDetail(MainActivity.this, fermata.codice, fermata.descrizione, fermata.ubicazione);
+        View dialogView = LayoutInflater.from(mainActivity)
+                .inflate(R.layout.dialog_favorite_stop, null, false);
+
+        TextView tvCodice = dialogView.findViewById(R.id.popup_stop_codice);
+        TextView tvDescrizione = dialogView.findViewById(R.id.popup_stop_descrizione);
+        TextView tvUbicazione = dialogView.findViewById(R.id.popup_stop_ubicazione);
+        EditText etAlias = dialogView.findViewById(R.id.popup_stop_alias);
+        Button btnAliasConfirm = dialogView.findViewById(R.id.popup_stop_alias_confirm);
+        Button btnGo = dialogView.findViewById(R.id.popup_stop_go);
+
+        tvCodice.setText("Codice: " + fermata.codice);
+        tvDescrizione.setText("Descrizione: " + fermata.descrizione);
+        tvUbicazione.setText("Ubicazione: " + fermata.ubicazione);
+
+        // Alias iniziale (se null lo gestiamo come stringa vuota)
+        final String[] originalAliasHolder = new String[]{(fermata.alias == null) ? "" : fermata.alias};
+        etAlias.setText(originalAliasHolder[0]);
+        etAlias.setSelection(etAlias.getText().length());
+
+        AlertDialog dialog = new AlertDialog.Builder(mainActivity)
+                .setTitle(R.string.favorite_popup_title)
+                .setView(dialogView)
+                .setNegativeButton(android.R.string.cancel, null)
+                .create();
+
+        // Abilita "Conferma" solo se l'alias è stato modificato rispetto al valore attuale
+        etAlias.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String current = (s == null) ? "" : s.toString();
+                btnAliasConfirm.setEnabled(!current.equals(originalAliasHolder[0]));
+            }
+
+            @Override public void afterTextChanged(Editable s) { }
+        });
+
+        // Salvataggio alias su DB
+        btnAliasConfirm.setOnClickListener(v -> {
+            String newAlias = etAlias.getText() == null ? "" : etAlias.getText().toString().trim();
+
+            // Normalizzazione: se vuoto, salviamo NULL (così Utils.print torna su codice-descrizione)
+            String aliasToPersist = newAlias.isEmpty() ? null : newAlias;
+
+            int updatedRows = FavoritesDataBase.getInstance(mainActivity)
+                    .fermataDao()
+                    .updateAlias(fermata.codice, aliasToPersist);
+
+            if (updatedRows > 0) {
+                fermata.alias = aliasToPersist;
+                originalAliasHolder[0] = (aliasToPersist == null) ? "" : aliasToPersist;
+
+                Toast.makeText(mainActivity, R.string.favorite_alias_saved, Toast.LENGTH_SHORT).show();
+                btnAliasConfirm.setEnabled(false);
+
+                // Aggiorna lista preferiti (così vedi subito l'alias nella lista)
+                writeFermate(null);
+            } else {
+                Toast.makeText(mainActivity, "Impossibile salvare l'alias", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Navigazione verso dettaglio fermata
+        btnGo.setOnClickListener(v -> {
+            dialog.dismiss();
+            goToStopDetail(MainActivity.this, fermata.codice, fermata.descrizione, fermata.ubicazione);
+        });
+
+        dialog.show();
     }
+
 
     static void goToStopDetail(Context context, String codiceFermata, String denominazione, String ubicazione) {
         Toast.makeText(context, "Caricamento dati fermata", Toast.LENGTH_LONG).show();
