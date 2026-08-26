@@ -29,6 +29,10 @@ public class Cronometro extends Thread implements Runnable {
     @Override
         public void run() {
             int refreshTime = Integer.parseInt(context.getString(R.string.refreshTime));
+            if (this.context.tempo<120) {
+                refreshTime = Integer.parseInt(context.getString(R.string.refreshTimeLess120));
+            }
+
             try {
                 sleep(1000);
                 this.context.tempo--;

@@ -305,7 +305,7 @@ public class Corsa extends AppCompatActivity {
     }
 
     private void check(long totale) {
-        if (Math.abs(totale-this.tempo)>60) {
+        if (Math.abs(totale-this.tempo)>Integer.parseInt(getString(R.string.criticalDifference))) {
             this.tempo = totale;
             updateSound.start();
             Toast.makeText(Corsa.this, "Aggiornamento del tempo stimato", Toast.LENGTH_SHORT).show();

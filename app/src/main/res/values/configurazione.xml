@@ -7,6 +7,8 @@
     <string name="inArrivingText" translatable="false">60</string>
     <string name="inArrivingBeep" translatable="false">120</string>
     <string name="refreshTime" translatable="false">30</string>
+    <string name="refreshTimeLess120" translatable="false">20</string>
+    <string name="criticalDifference" translatable="false">54</string>
     <string name="instructions_IT" translatable="false">istruzioni_busbooking_v1.0.pdf</string>
     <string name="instructions_EN" translatable="false">instructions_busbooking_v1.0.pdf</string>
 
