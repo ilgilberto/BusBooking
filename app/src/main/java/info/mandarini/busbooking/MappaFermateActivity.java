@@ -3,15 +3,13 @@ package info.mandarini.busbooking;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.RectF;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.MenuItem;
-import android.view.Gravity;
-import android.view.View;
-import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,10 +25,14 @@ import org.maplibre.android.geometry.LatLng;
 import org.maplibre.android.geometry.LatLngBounds;
 import org.maplibre.android.maps.MapLibreMap;
 import org.maplibre.android.maps.MapView;
+import org.maplibre.android.style.expressions.Expression;
 import org.maplibre.android.style.layers.CircleLayer;
+import org.maplibre.android.style.layers.Property;
 import org.maplibre.android.style.layers.PropertyFactory;
+import org.maplibre.android.style.layers.SymbolLayer;
 import org.maplibre.android.style.sources.GeoJsonSource;
 import org.maplibre.geojson.Feature;
+import org.maplibre.geojson.FeatureCollection;
 import org.maplibre.geojson.Point;
 
 import java.util.ArrayList;
@@ -39,59 +41,60 @@ import java.util.List;
 import info.mandarini.busbooking.persistence.entities.Fermata;
 
 /**
- * Mappa nativa delle fermate vicine. I dati arrivano dall'elenco esistente:
- * non effettua una seconda chiamata REST e non richiede chiavi API.
+ * Visualizza le fermate vicine con layer MapLibre nativi.
+ *
+ * I cerchi sono TUTTI disegnati da CircleLayer. Le etichette sono disegnate
+ * da due SymbolLayer (a sinistra o a destra della fermata) e selezionate
+ * dopo ogni spostamento della mappa per evitare collisioni tra i nomi.
+ * Nessun componente View viene sovrapposto per rappresentare le fermate.
  */
 public class MappaFermateActivity extends AppCompatActivity {
 
     private static final String EXTRA_FERMATE = "info.mandarini.busbooking.MAP_STOPS";
     private static final String EXTRA_LAT = "info.mandarini.busbooking.MAP_USER_LAT";
     private static final String EXTRA_LON = "info.mandarini.busbooking.MAP_USER_LON";
-
     private static final String STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
+
+    // Identificatori del test C riuscito: stessa sorgente FeatureCollection,
+    // stesso CircleLayer, attivato passando da NONE a VISIBLE.
+    private static final String STOPS_SOURCE = "busbooking-test-collection-all";
+    private static final String STOPS_CIRCLES = "busbooking-test-circle-collection-all";
+    private static final String LABELS_RIGHT_SOURCE = "busbooking-labels-right-source";
+    private static final String LABELS_LEFT_SOURCE = "busbooking-labels-left-source";
+    private static final String LABELS_RIGHT_LAYER = "busbooking-labels-right-layer";
+    private static final String LABELS_LEFT_LAYER = "busbooking-labels-left-layer";
     private static final String USER_SOURCE = "busbooking-user";
     private static final String USER_CIRCLE = "busbooking-user-point";
+    private static final String TAG = "BusBookingMap";
 
+    private static final float LABEL_SIZE_SP = 11f;
     private final List<Fermata> fermate = new ArrayList<>();
     private MapView mapView;
-    // I marker sono View Android sopra MapView, non layer GeoJSON:
-    // in questo modo restano visibili anche sul dispositivo dove le Feature non erano renderizzate.
-    private FrameLayout stopsOverlay;
-    private final List<StopOverlay> stopOverlays = new ArrayList<>();
-    private int lastVisibleLabels = -1;
-
-    private static class StopOverlay {
-        final Fermata fermata;
-        final FrameLayout pin;
-        final TextView label;
-
-        StopOverlay(Fermata fermata, FrameLayout pin, TextView label) {
-            this.fermata = fermata;
-            this.pin = pin;
-            this.label = label;
-        }
-    }
+    private TextView mapHelp;
+    private GeoJsonSource labelsRightSource;
+    private GeoJsonSource labelsLeftSource;
     private Double userLat;
     private Double userLon;
+    private boolean labelsReady;
 
-    /** Prepara i dati delle fermate per la nuova Activity, senza modificare Fermata/Room. */
+    /** Trasferisce le coordinate che MainActivity ha gia' ricevuto via REST. */
     public static Intent createIntent(Context context, List<Fermata> fermate,
                                       Double posizioneLat, Double posizioneLon) {
         JSONArray json = new JSONArray();
-        for (Fermata fermata : fermate) {
-            if (!validCoordinates(fermata.latitudine, fermata.longitudine)) {
+        for (Fermata f : fermate) {
+            if (!validCoordinates(f.latitudine, f.longitudine)) {
                 continue;
             }
             try {
-                JSONObject stop = new JSONObject();
-                stop.put("codice", fermata.codice);
-                stop.put("denominazione", fermata.descrizione);
-                stop.put("ubicazione", fermata.ubicazione);
-                stop.put("latitudine", fermata.latitudine);
-                stop.put("longitudine", fermata.longitudine);
-                json.put(stop);
+                JSONObject item = new JSONObject();
+                item.put("codice", f.codice);
+                item.put("denominazione", f.descrizione);
+                item.put("ubicazione", f.ubicazione);
+                item.put("latitudine", f.latitudine);
+                item.put("longitudine", f.longitudine);
+                json.put(item);
             } catch (JSONException e) {
-                Log.w("BusBooking", "Fermata non serializzabile per la mappa", e);
+                Log.w(TAG, "Impossibile serializzare una fermata", e);
             }
         }
         Intent intent = new Intent(context, MappaFermateActivity.class);
@@ -105,8 +108,9 @@ public class MappaFermateActivity extends AppCompatActivity {
 
     private static boolean validCoordinates(Double lat, Double lon) {
         return lat != null && lon != null
-                && !Double.isNaN(lat) && !Double.isInfinite(lat) && lat >= -90 && lat <= 90
-                && !Double.isNaN(lon) && !Double.isInfinite(lon) && lon >= -180 && lon <= 180;
+                && !Double.isNaN(lat) && !Double.isInfinite(lat)
+                && !Double.isNaN(lon) && !Double.isInfinite(lon)
+                && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
     }
 
     @Override
@@ -122,23 +126,16 @@ public class MappaFermateActivity extends AppCompatActivity {
                 if (!validCoordinates(lat, lon)) {
                     continue;
                 }
-                Fermata fermata = new Fermata();
-                fermata.codice = item.optString("codice", "");
-                fermata.descrizione = item.optString("denominazione", "");
-                fermata.ubicazione = item.optString("ubicazione", "");
-                fermata.latitudine = lat;
-                fermata.longitudine = lon;
-                fermate.add(fermata);
+                Fermata f = new Fermata();
+                f.codice = item.optString("codice", "");
+                f.descrizione = item.optString("denominazione", "");
+                f.ubicazione = item.optString("ubicazione", "");
+                f.latitudine = lat;
+                f.longitudine = lon;
+                fermate.add(f);
             }
         } catch (JSONException e) {
-            Log.e("BusBooking", "Dati mappa non validi", e);
-        }
-        Log.i("BusBookingMap", "Fermate ricostruite da Intent: " + fermate.size());
-        for (int i = 0; i < Math.min(5, fermate.size()); i++) {
-            Fermata f = fermate.get(i);
-            Log.i("BusBookingMap", "Fermata " + i + " - " + f.codice
-                    + " / " + f.descrizione + " lat=" + f.latitudine
-                    + " lon=" + f.longitudine);
+            Log.e(TAG, "Dati mappa non validi", e);
         }
         if (fermate.isEmpty()) {
             Toast.makeText(this, R.string.map_no_stops, Toast.LENGTH_SHORT).show();
@@ -154,7 +151,6 @@ public class MappaFermateActivity extends AppCompatActivity {
             }
         }
 
-        // MapLibre deve essere inizializzato PRIMA dell'inflazione XML del MapView.
         MapLibre.getInstance(getApplicationContext());
         setContentView(R.layout.activity_mappa_fermate);
         setTitle(R.string.map_title);
@@ -162,23 +158,32 @@ public class MappaFermateActivity extends AppCompatActivity {
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
-
         mapView = findViewById(R.id.map_view_stops);
-        stopsOverlay = findViewById(R.id.map_stops_overlay);
+        mapHelp = findViewById(R.id.map_help);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(map -> map.setStyle(STYLE_URL, style -> showStops(map)));
     }
 
     private void showStops(MapLibreMap map) {
-        // I layer GeoJSON delle fermate non erano visibili, nonostante le coordinate
-        // fossero corrette e dentro il viewport. Per dieci fermate vicine, una
-        // sovrapposizione di View Android e' semplice e non dipende da quei layer.
-        createStopOverlays();
+        // Manteniamo ESATTAMENTE la forma di creazione sorgente/cerchi
+        // del test C che ha restituito 10 feature su 10 renderizzate.
+        List<Feature> all = new ArrayList<>();
+        for (Fermata f : fermate) {
+            all.add(makeFeature(f));
+        }
+        map.getStyle().addSource(new GeoJsonSource(STOPS_SOURCE,
+                FeatureCollection.fromFeatures(all.toArray(new Feature[0]))));
+        map.getStyle().addLayer(new CircleLayer(STOPS_CIRCLES, STOPS_SOURCE)
+                .withProperties(
+                        PropertyFactory.circleColor(Color.rgb(238, 112, 25)),
+                        PropertyFactory.circleRadius(8f),
+                        PropertyFactory.circleStrokeWidth(2f),
+                        PropertyFactory.circleStrokeColor(Color.WHITE),
+                        PropertyFactory.visibility(Property.NONE)));
 
-        // Manteniamo il punto blu dell'utente, gia' funzionante nella versione precedente.
         if (validCoordinates(userLat, userLon)) {
-            Feature userPoint = Feature.fromGeometry(Point.fromLngLat(userLon, userLat));
-            map.getStyle().addSource(new GeoJsonSource(USER_SOURCE, userPoint));
+            Feature user = Feature.fromGeometry(Point.fromLngLat(userLon, userLat));
+            map.getStyle().addSource(new GeoJsonSource(USER_SOURCE, user));
             map.getStyle().addLayer(new CircleLayer(USER_CIRCLE, USER_SOURCE)
                     .withProperties(
                             PropertyFactory.circleColor(Color.rgb(23, 103, 224)),
@@ -187,149 +192,279 @@ public class MappaFermateActivity extends AppCompatActivity {
                             PropertyFactory.circleStrokeColor(Color.WHITE)));
         }
 
-        // Proiezione geografica -> coordinate schermo ad ogni movimento della mappa.
-        map.addOnCameraMoveListener(() -> positionStopOverlays(map));
-        map.addOnCameraIdleListener(() -> positionStopOverlays(map));
+        // Ogni fermata rimane cliccabile anche quando il suo nome e' nascosto.
+        map.addOnMapClickListener(tap -> {
+            PointF px = map.getProjection().toScreenLocation(tap);
+            int radius = dp(23);
+            RectF hitBox = new RectF(px.x - radius, px.y - radius,
+                    px.x + radius, px.y + radius);
+            List<Feature> pinHits = map.queryRenderedFeatures(hitBox, STOPS_CIRCLES);
+            Fermata nearest = closestStop(px, pinHits, map);
+            if (nearest != null) {
+                openStopDetail(nearest);
+                return true;
+            }
+            // Le etichette hanno la stessa proprieta' "codice" della fermata.
+            if (labelsReady) {
+                List<Feature> labelHits = map.queryRenderedFeatures(hitBox,
+                        LABELS_RIGHT_LAYER, LABELS_LEFT_LAYER);
+                if (labelHits != null && !labelHits.isEmpty()) {
+                    Feature labelFeature = labelHits.get(0);
+                    if (labelFeature.hasProperty("codice")) {
+                        Fermata f = findStop(labelFeature.getStringProperty("codice"));
+                        if (f != null) {
+                            openStopDetail(f);
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        });
 
+        // I nomi si ricalcolano solo a camera ferma; i cerchi rimangono
+        // sempre gestiti interamente dal rendering nativo di MapLibre.
+        map.addOnCameraIdleListener(() -> updateSmartLabels(map));
         mapView.post(() -> {
             fitAllStops(map);
-            positionStopOverlays(map);
+            // Cambio esplicito NONE -> VISIBLE, gia' collaudato nel test C.
+            mapView.postDelayed(() -> {
+                if (isFinishing() || isDestroyed() || map.getStyle() == null) {
+                    return;
+                }
+                CircleLayer stops = map.getStyle().getLayerAs(STOPS_CIRCLES);
+                if (stops != null) {
+                    stops.setProperties(PropertyFactory.visibility(Property.VISIBLE));
+                }
+                // I SymbolLayer vengono creati DOPO l'attivazione dei cerchi.
+                // Nel test riuscito i nomi erano infatti stati aggiunti dopo C.
+                mapView.postDelayed(() -> {
+                    if (!isFinishing() && !isDestroyed() && map.getStyle() != null) {
+                        createLabelLayers(map);
+                        updateSmartLabels(map);
+                    }
+                }, 350L);
+            }, 500L);
         });
-        Log.i("BusBookingMap", "Marker Android creati: " + stopOverlays.size());
+        Log.i(TAG, "GeoJSON nativo: " + fermate.size() + " fermate disponibili");
     }
 
-    private void createStopOverlays() {
-        stopsOverlay.removeAllViews();
-        stopOverlays.clear();
-        final int touchSize = dp(44);
-        final int circleSize = dp(17);
+    private Feature makeFeature(Fermata f) {
+        Feature result = Feature.fromGeometry(Point.fromLngLat(f.longitudine, f.latitudine));
+        result.addStringProperty("codice", f.codice);
+        result.addStringProperty("denominazione", f.descrizione);
+        result.addStringProperty("ubicazione", f.ubicazione == null ? "" : f.ubicazione);
+        return result;
+    }
 
-        // Aggiungiamo PRIMA tutti i punti: restano tutti disponibili, anche
-        // quando i nomi vengono temporaneamente nascosti per evitare sovrapposizioni.
-        for (Fermata fermata : fermate) {
-            FrameLayout pin = new FrameLayout(this);
-            pin.setLayoutParams(new FrameLayout.LayoutParams(touchSize, touchSize));
-            pin.setContentDescription("Fermata " + fermata.codice + " - " + fermata.descrizione);
-            pin.setClickable(true);
-            pin.setElevation(dp(4)); // I punti rimangono sopra le etichette.
-            pin.setOnClickListener(v -> openStopDetail(fermata));
-
-            View point = new View(this);
-            GradientDrawable dot = new GradientDrawable();
-            dot.setShape(GradientDrawable.OVAL);
-            dot.setColor(Color.rgb(235, 105, 25));
-            dot.setStroke(dp(2), Color.WHITE);
-            point.setBackground(dot);
-            FrameLayout.LayoutParams pointParams = new FrameLayout.LayoutParams(
-                    circleSize, circleSize, Gravity.CENTER);
-            pin.addView(point, pointParams);
-            stopsOverlay.addView(pin);
-
-            TextView label = new TextView(this);
-            label.setText(fermata.codice + " - " + fermata.descrizione);
-            label.setContentDescription("Apri fermata " + fermata.codice
-                    + " - " + fermata.descrizione);
-            label.setTextSize(11f);
-            label.setTextColor(Color.rgb(35, 44, 56));
-            label.setMaxLines(2);
-            label.setMaxWidth(dp(165));
-            label.setPadding(dp(7), dp(4), dp(7), dp(4));
-            label.setGravity(Gravity.CENTER_VERTICAL);
-            label.setMinHeight(dp(30));
-            label.setClickable(true);
-            label.setOnClickListener(v -> openStopDetail(fermata));
-            GradientDrawable bubble = new GradientDrawable();
-            bubble.setColor(Color.argb(246, 255, 255, 255));
-            bubble.setCornerRadius(dp(7));
-            bubble.setStroke(dp(1), Color.rgb(235, 105, 25));
-            label.setBackground(bubble);
-            label.setElevation(dp(2));
-            label.setLayoutParams(new FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT));
-            stopsOverlay.addView(label);
-
-            stopOverlays.add(new StopOverlay(fermata, pin, label));
+    private void createLabelLayers(MapLibreMap map) {
+        if (labelsReady) {
+            return;
         }
+        FeatureCollection empty = FeatureCollection.fromFeatures(new Feature[0]);
+        labelsRightSource = new GeoJsonSource(LABELS_RIGHT_SOURCE, empty);
+        labelsLeftSource = new GeoJsonSource(LABELS_LEFT_SOURCE, empty);
+        map.getStyle().addSource(labelsRightSource);
+        map.getStyle().addSource(labelsLeftSource);
+
+        // Le collisioni con i nomi gia' presenti nella mappa Liberty avevano
+        // nascosto tutte le denominazioni. Selezioniamo NOI solo le etichette
+        // che non si sovrappongono tra loro e chiediamo al SymbolLayer di
+        // visualizzarle, con il font Noto Sans compatibile con lo stile.
+        map.getStyle().addLayer(makeLabelLayer(LABELS_RIGHT_LAYER,
+                LABELS_RIGHT_SOURCE, Property.TEXT_ANCHOR_LEFT, 1.5f));
+        map.getStyle().addLayer(makeLabelLayer(LABELS_LEFT_LAYER,
+                LABELS_LEFT_SOURCE, Property.TEXT_ANCHOR_RIGHT, -1.5f));
+        labelsReady = true;
     }
 
-    private void openStopDetail(Fermata fermata) {
-        MainActivity.goToStopDetail(this, fermata.codice,
-                fermata.descrizione, fermata.ubicazione);
+    private SymbolLayer makeLabelLayer(String layerId, String sourceId,
+                                       String anchor, float offsetX) {
+        return new SymbolLayer(layerId, sourceId).withProperties(
+                PropertyFactory.textField(Expression.get("label")),
+                PropertyFactory.textFont(new String[]{"Noto Sans Regular"}),
+                PropertyFactory.textSize(LABEL_SIZE_SP),
+                PropertyFactory.textMaxWidth(30f),
+                PropertyFactory.textAnchor(anchor),
+                PropertyFactory.textOffset(new Float[]{offsetX, 0f}),
+                PropertyFactory.textColor(Color.rgb(30, 40, 52)),
+                PropertyFactory.textHaloColor(Color.WHITE),
+                PropertyFactory.textHaloWidth(2f),
+                PropertyFactory.textAllowOverlap(true),
+                PropertyFactory.textIgnorePlacement(true));
+    }
+
+    /**
+     * Mostra tante etichette quante entrano nello schermo senza sovrapporsi.
+     * Si prova prima a destra del punto, poi a sinistra. A zoom maggiore
+     * c'e' piu' spazio e quindi diventano leggibili piu' fermate.
+     */
+    private void updateSmartLabels(MapLibreMap map) {
+        if (!labelsReady || mapView == null || isFinishing() || isDestroyed()
+                || mapView.getWidth() <= 0 || mapView.getHeight() <= 0) {
+            return;
+        }
+        final int screenWidth = mapView.getWidth();
+        final int screenHeight = mapView.getHeight();
+        final int helpBottom = mapHelp == null ? dp(105)
+                : (int) (mapHelp.getY() + mapHelp.getHeight() + dp(8));
+        final float gap = dp(17);
+        final float inset = dp(8);
+
+        List<Feature> labelsRight = new ArrayList<>();
+        List<Feature> labelsLeft = new ArrayList<>();
+        List<RectF> occupied = new ArrayList<>();
+        List<PointF> pins = new ArrayList<>();
+        for (Fermata f : fermate) {
+            pins.add(map.getProjection().toScreenLocation(new LatLng(f.latitudine, f.longitudine)));
+        }
+        PointF userPin = validCoordinates(userLat, userLon)
+                ? map.getProjection().toScreenLocation(new LatLng(userLat, userLon)) : null;
+
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                LABEL_SIZE_SP, getResources().getDisplayMetrics()));
+        final float maxLineWidth = dp(144);
+
+        for (int i = 0; i < fermate.size(); i++) {
+            Fermata f = fermate.get(i);
+            PointF center = pins.get(i);
+            if (center.x < 0 || center.y < helpBottom
+                    || center.x > screenWidth || center.y > screenHeight) {
+                continue;
+            }
+            String label = wrapText(f.codice + " · " + f.descrizione,
+                    paint, maxLineWidth);
+            String[] lines = label.split("\n", -1);
+            float width = 0;
+            for (String line : lines) {
+                width = Math.max(width, paint.measureText(line));
+            }
+            width += dp(12); // Tolleranza per il font effettivo Noto Sans.
+            float height = lines.length * paint.getTextSize() * 1.45f + dp(6);
+            RectF right = new RectF(center.x + gap, center.y - height / 2f,
+                    center.x + gap + width, center.y + height / 2f);
+            RectF left = new RectF(center.x - gap - width, center.y - height / 2f,
+                    center.x - gap, center.y + height / 2f);
+
+            boolean useRight = acceptable(right, screenWidth, screenHeight,
+                    helpBottom, inset, occupied, pins, i, userPin);
+            boolean useLeft = !useRight && acceptable(left, screenWidth, screenHeight,
+                    helpBottom, inset, occupied, pins, i, userPin);
+            if (!useRight && !useLeft) {
+                continue;
+            }
+            RectF placed = useRight ? right : left;
+            occupied.add(new RectF(placed.left - dp(5), placed.top - dp(5),
+                    placed.right + dp(5), placed.bottom + dp(5)));
+            Feature nameFeature = makeFeature(f);
+            nameFeature.addStringProperty("label", label);
+            (useRight ? labelsRight : labelsLeft).add(nameFeature);
+        }
+        labelsRightSource.setGeoJson(FeatureCollection.fromFeatures(
+                labelsRight.toArray(new Feature[0])));
+        labelsLeftSource.setGeoJson(FeatureCollection.fromFeatures(
+                labelsLeft.toArray(new Feature[0])));
+        Log.d(TAG, "Fermate=" + fermate.size() + " | etichette leggibili="
+                + (labelsRight.size() + labelsLeft.size())
+                + " | zoom=" + map.getCameraPosition().zoom);
+    }
+
+    private boolean acceptable(RectF candidate, int width, int height,
+                               int helpBottom, float inset, List<RectF> occupied,
+                               List<PointF> pins, int self, PointF userPin) {
+        if (candidate.left < inset || candidate.right > width - inset
+                || candidate.top < helpBottom || candidate.bottom > height - inset) {
+            return false;
+        }
+        for (RectF rect : occupied) {
+            if (RectF.intersects(candidate, rect)) {
+                return false;
+            }
+        }
+        // Non coprire altri punti fermata con le denominazioni.
+        float pinMargin = dp(12);
+        for (int i = 0; i < pins.size(); i++) {
+            if (i == self) {
+                continue;
+            }
+            PointF p = pins.get(i);
+            if (candidate.intersects(p.x - pinMargin, p.y - pinMargin,
+                    p.x + pinMargin, p.y + pinMargin)) {
+                return false;
+            }
+        }
+        return userPin == null || !candidate.intersects(
+                userPin.x - pinMargin, userPin.y - pinMargin,
+                userPin.x + pinMargin, userPin.y + pinMargin);
+    }
+
+    private static String wrapText(String value, Paint paint, float maxWidth) {
+        StringBuilder result = new StringBuilder();
+        StringBuilder current = new StringBuilder();
+        for (String word : value.trim().split("\\s+")) {
+            String proposal = current.length() == 0 ? word : current + " " + word;
+            if (current.length() > 0 && paint.measureText(proposal) > maxWidth) {
+                if (result.length() > 0) {
+                    result.append('\n');
+                }
+                result.append(current);
+                current.setLength(0);
+                current.append(word);
+            } else {
+                current.setLength(0);
+                current.append(proposal);
+            }
+        }
+        if (current.length() > 0) {
+            if (result.length() > 0) {
+                result.append('\n');
+            }
+            result.append(current);
+        }
+        return result.toString();
+    }
+
+    private Fermata closestStop(PointF tap, List<Feature> hits, MapLibreMap map) {
+        if (hits == null || hits.isEmpty()) {
+            return null;
+        }
+        Fermata best = null;
+        double bestDistance2 = Double.MAX_VALUE;
+        for (Feature feature : hits) {
+            if (!feature.hasProperty("codice")) {
+                continue;
+            }
+            Fermata f = findStop(feature.getStringProperty("codice"));
+            if (f == null) {
+                continue;
+            }
+            PointF p = map.getProjection().toScreenLocation(
+                    new LatLng(f.latitudine, f.longitudine));
+            double distance2 = Math.pow(p.x - tap.x, 2) + Math.pow(p.y - tap.y, 2);
+            if (distance2 < bestDistance2) {
+                bestDistance2 = distance2;
+                best = f;
+            }
+        }
+        return best;
+    }
+
+    private Fermata findStop(String code) {
+        for (Fermata f : fermate) {
+            if (f.codice.equals(code)) {
+                return f;
+            }
+        }
+        return null;
+    }
+
+    private void openStopDetail(Fermata f) {
+        MainActivity.goToStopDetail(this, f.codice, f.descrizione, f.ubicazione);
     }
 
     private int dp(float value) {
         return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
-    }
-
-    private void positionStopOverlays(MapLibreMap map) {
-        if (stopsOverlay == null || mapView == null || stopsOverlay.getWidth() <= 0) {
-            return;
-        }
-        int width = stopsOverlay.getWidth();
-        int height = stopsOverlay.getHeight();
-        int halfTouch = dp(22);
-        int gap = dp(8);
-        int margin = dp(4);
-        // Il messaggio in alto occupa i primi circa 90 dp: preferiamo non
-        // sovrapporre le etichette alle istruzioni (i punti restano cliccabili).
-        int helpAreaBottom = dp(96);
-        List<RectF> labelsPlaced = new ArrayList<>();
-        int visibleLabels = 0;
-
-        for (StopOverlay stop : stopOverlays) {
-            PointF p = map.getProjection().toScreenLocation(
-                    new LatLng(stop.fermata.latitudine, stop.fermata.longitudine));
-            boolean visible = p.x >= -halfTouch && p.y >= -halfTouch
-                    && p.x <= width + halfTouch && p.y <= height + halfTouch;
-            stop.pin.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
-            if (!visible) {
-                stop.label.setVisibility(View.INVISIBLE);
-                continue;
-            }
-            stop.pin.setX(p.x - halfTouch);
-            stop.pin.setY(p.y - halfTouch);
-            // La TextView e' gia' stata misurata, dopo il primo passaggio layout.
-            // Se ancora non lo fosse, ne richiediamo la misura senza aspettare la camera.
-            if (stop.label.getMeasuredWidth() == 0) {
-                int wSpec = View.MeasureSpec.makeMeasureSpec(dp(165), View.MeasureSpec.AT_MOST);
-                int hSpec = View.MeasureSpec.makeMeasureSpec(dp(120), View.MeasureSpec.AT_MOST);
-                stop.label.measure(wSpec, hSpec);
-            }
-            float lw = stop.label.getMeasuredWidth();
-            float lh = stop.label.getMeasuredHeight();
-            float x = p.x + gap + dp(5);
-            if (x + lw > width - margin) {
-                x = p.x - gap - dp(5) - lw;
-            }
-            x = Math.max(margin, Math.min(x, width - margin - lw));
-            float y = Math.max(margin, Math.min(p.y - lh / 2f, height - margin - lh));
-            RectF area = new RectF(x - dp(2), y - dp(2),
-                    x + lw + dp(2), y + lh + dp(2));
-
-            boolean conflicts = y < helpAreaBottom;
-            for (RectF previous : labelsPlaced) {
-                if (RectF.intersects(area, previous)) {
-                    conflicts = true;
-                    break;
-                }
-            }
-            if (conflicts) {
-                stop.label.setVisibility(View.INVISIBLE);
-            } else {
-                stop.label.setX(x);
-                stop.label.setY(y);
-                stop.label.setVisibility(View.VISIBLE);
-                labelsPlaced.add(area);
-                visibleLabels++;
-            }
-        }
-        // Un solo log quando cambia il numero delle etichette visibili.
-        if (visibleLabels != lastVisibleLabels) {
-            lastVisibleLabels = visibleLabels;
-            Log.d("BusBookingMap", "Punti fermate: " + stopOverlays.size()
-                    + " | etichette non sovrapposte: " + visibleLabels);
-        }
     }
 
     private void fitAllStops(MapLibreMap map) {
@@ -339,7 +474,7 @@ public class MappaFermateActivity extends AppCompatActivity {
         double minLat = 90, minLon = 180, maxLat = -90, maxLon = -180;
         LatLngBounds.Builder bounds = new LatLngBounds.Builder();
         for (Fermata f : fermate) {
-            bounds.include(new LatLng(f.latitudine, f.longitudine)); // LatLng: latitudine PRIMA.
+            bounds.include(new LatLng(f.latitudine, f.longitudine));
             minLat = Math.min(minLat, f.latitudine);
             maxLat = Math.max(maxLat, f.latitudine);
             minLon = Math.min(minLon, f.longitudine);
@@ -356,7 +491,7 @@ public class MappaFermateActivity extends AppCompatActivity {
             map.moveCamera(CameraUpdateFactory.newLatLngZoom(
                     new LatLng(fermate.get(0).latitudine, fermate.get(0).longitudine), 16));
         } else {
-            int padding = (int) (55 * getResources().getDisplayMetrics().density);
+            int padding = dp(55);
             map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), padding));
         }
     }

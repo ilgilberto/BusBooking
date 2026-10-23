@@ -8,15 +8,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- I marker nativi sono posizionati sopra la mappa e seguono i movimenti. -->
-    <FrameLayout
-        android:id="@+id/map_stops_overlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clickable="false"
-        android:focusable="false" />
-
     <TextView
+        android:id="@+id/map_help"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="top"
