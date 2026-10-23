@@ -3,6 +3,8 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import java.math.BigDecimal;
+
 @Entity(tableName = "FERMATE")
 public class Fermata {
 
@@ -21,6 +23,12 @@ public class Fermata {
 
         @ColumnInfo(name = "ALIAS")
         public String alias;
+
+
+        public Double longitudine;
+
+
+        public Double latitudine;
 
 
         @ColumnInfo(name = "last_name")

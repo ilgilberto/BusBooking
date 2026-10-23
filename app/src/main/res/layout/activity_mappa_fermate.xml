@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <org.maplibre.android.maps.MapView
+        android:id="@+id/map_view_stops"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- I marker nativi sono posizionati sopra la mappa e seguono i movimenti. -->
+    <FrameLayout
+        android:id="@+id/map_stops_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:layout_margin="12dp"
+        android:background="#EDF7FAFC"
+        android:elevation="3dp"
+        android:padding="12dp"
+        android:text="@string/map_help"
+        android:textColor="#182C45"
+        android:textSize="14sp" />
+
+</FrameLayout>

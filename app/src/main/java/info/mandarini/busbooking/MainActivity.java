@@ -1,5 +1,6 @@
 package info.mandarini.busbooking;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -9,20 +10,15 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.graphics.Rect;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.WindowMetrics;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -41,11 +37,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import androidx.appcompat.app.AlertDialog;
+
+import java.util.ArrayList;
 import java.util.List;
 
 import info.mandarini.busbooking.persistence.entities.Fermata;
 import info.mandarini.busbooking.persistence.repositories.FavoritesDataBase;
-import info.mandarini.busbooking.threads.Cronometro;
 
 public class MainActivity extends AppCompatActivity implements LocationListener {
 
@@ -59,23 +56,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        int width, height;
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // API 30+
-            WindowMetrics metrics = getWindowManager().getCurrentWindowMetrics();
-            Rect bounds = metrics.getBounds();
-            width = bounds.width();
-            height = bounds.height();
-        } else {
-            // API < 30
-            DisplayMetrics displayMetrics = new DisplayMetrics();
-            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-            width = displayMetrics.widthPixels;
-            height = displayMetrics.heightPixels;
-        }
 
         setContentView(R.layout.activity_main);
+
+        // Nuova gestione retrocompatibile del tasto Back
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                Intent startMain = new Intent(Intent.ACTION_MAIN);
+                startMain.addCategory(Intent.CATEGORY_HOME);
+                startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(startMain);
+            }
+        });
     }
 
     @Override
@@ -89,14 +82,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         if (longitude != null && latitude != null) {
             execStart(longitude,latitude);
         }
-    }
-
-    @Override
-    public void onBackPressed() {
-        Intent startMain = new Intent(Intent.ACTION_MAIN);
-        startMain.addCategory(Intent.CATEGORY_HOME);
-        startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(startMain);
     }
 
     public void nogps(View view) {
@@ -204,6 +189,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     private void writeJson(JSONArray response, LinearLayout display) {
         try {
+            List<Fermata> fermatePerMappa = new ArrayList<>();
             for (int index = 0; index < response.length(); index++) {
 
                 JSONObject o = response.getJSONObject(index);
@@ -211,6 +197,23 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 final String codiceFermata = o.getString("codice");
                 final String denominazione = o.getString("denominazione");
                 final String ubicazione = o.getString("ubicazione");
+
+                Fermata f = new Fermata();
+                f.ubicazione = ubicazione;
+                f.codice = codiceFermata;
+                f.descrizione = denominazione;
+                // Le fermate prive di coordinate valide restano nell'elenco,
+                // ma non vengono inserite tra i segnaposto della mappa.
+                double lon = o.optDouble("longitudine", Double.NaN);
+                double lat = o.optDouble("latitudine", Double.NaN);
+                Log.i("Coordinate","Latitudine: " + lat + " longitudine: " + lon);
+                if (!Double.isNaN(lat) && !Double.isInfinite(lat) && lat >= -90 && lat <= 90
+                        && !Double.isNaN(lon) && !Double.isInfinite(lon) && lon >= -180 && lon <= 180) {
+                    f.longitudine = lon;
+                    f.latitudine = lat;
+                    fermatePerMappa.add(f);
+                }
+
                 t.setText(codiceFermata + "-" + denominazione);
 
                 try {
@@ -232,8 +235,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     Log.e("prova", "prova", e);
                 }
             }
+
+            // Il pulsante si trova dopo l'elenco delle fermate vicine.
+            if (!fermatePerMappa.isEmpty()) {
+                Button mappa = new Button(this);
+                mappa.setText(R.string.view_stops_on_map);
+                mappa.setAllCaps(false);
+                mappa.setOnClickListener(v -> startActivity(
+                        MappaFermateActivity.createIntent(
+                                MainActivity.this, fermatePerMappa, latitude, longitude)));
+                display.addView(mappa);
+            }
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.e("BusBooking", "Impossibile leggere le fermate", e);
         }
     }
 
@@ -353,11 +367,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         Log.v("CIAO", "Status changed: " + s);
     }
 
-    public void onProviderEnabled(String s) {
-        Log.e("CIAO", "PROVIDER DISABLED: " + s);
+    public void onProviderEnabled(@NonNull String s) {
+        Log.i("MainActivity", "Provider abilitato: " + s);
     }
 
-    public void onProviderDisabled(String s) {
-        Log.e("CIAO", "PROVIDER DISABLED: " + s);
+    public void onProviderDisabled(@NonNull String s) {
+        Log.e("MainActivity", "Provider disabilitato: " + s);
     }
 }

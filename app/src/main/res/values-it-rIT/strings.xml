@@ -24,4 +24,8 @@
     <string name="favorite_alias_saved">Alias salvato</string>
     <string name="favorite_go_to_stop">Vai alla fermata</string>
 
+    <string name="view_stops_on_map">Visualizza nella mappa</string>
+    <string name="map_title">Mappa delle fermate vicine</string>
+    <string name="map_help">Tocca un punto arancione o il nome di una fermata per aprirne il dettaglio. Blu: la tua posizione.</string>
+    <string name="map_no_stops">Nessuna fermata disponibile sulla mappa</string>
 </resources>

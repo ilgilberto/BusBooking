@@ -23,4 +23,8 @@
     <string name="favorite_alias_saved">Alias saved</string>
     <string name="favorite_go_to_stop">Go to Stop</string>
 
+    <string name="view_stops_on_map">View on map</string>
+    <string name="map_title">Nearby stops map</string>
+    <string name="map_help">Tap a stop marker or its name to see its details. Blue: your location.</string>
+    <string name="map_no_stops">No stops available on the map</string>
 </resources>
