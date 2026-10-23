@@ -73,6 +73,20 @@ public class MappaFermateActivity extends AppCompatActivity {
     private static final String TAG = "BusBookingMap";
 
     private static final float LABEL_SIZE_SP = 11f;
+
+    // ===============================================================
+    // REGOLAZIONI ETICHETTE - modifica SOLO queste due costanti
+    // ===============================================================
+    // Distanza orizzontale dall'ancoraggio della fermata, in unita' em.
+    // Versione precedente: 2.5f. Valore minore = riquadro piu' vicino.
+    private static final float LABEL_DISTANCE_EM = 1.2f;
+
+    // Padding aggiuntivo INTERNO al rettangolo, in pixel di stile.
+    // Versione precedente: 4px verticale + 5px orizzontale,
+    // oltre a spazio implicito dello sprite. 0f = minimo possibile.
+    private static final float LABEL_PADDING_PX = 3.0f;
+    // ===============================================================
+
     // Fondo opaco per le etichette. Non interferisce con i CircleLayer delle fermate.
     private static final String LABEL_BACKGROUND = "busbooking-label-white-box";
     private final List<Fermata> fermate = new ArrayList<>();
@@ -279,10 +293,11 @@ public class MappaFermateActivity extends AppCompatActivity {
         // nascosto tutte le denominazioni. Selezioniamo NOI solo le etichette
         // che non si sovrappongono tra loro e chiediamo al SymbolLayer di
         // visualizzarle, con il font Noto Sans compatibile con lo stile.
+        // La stessa costante governa la distanza dei riquadri su entrambi i lati.
         map.getStyle().addLayer(makeLabelLayer(LABELS_RIGHT_LAYER,
-                LABELS_RIGHT_SOURCE, Property.TEXT_ANCHOR_LEFT, 1.5f));
+                LABELS_RIGHT_SOURCE, Property.TEXT_ANCHOR_LEFT, LABEL_DISTANCE_EM));
         map.getStyle().addLayer(makeLabelLayer(LABELS_LEFT_LAYER,
-                LABELS_LEFT_SOURCE, Property.TEXT_ANCHOR_RIGHT, -1.5f));
+                LABELS_LEFT_SOURCE, Property.TEXT_ANCHOR_RIGHT, -LABEL_DISTANCE_EM));
         labelsReady = true;
     }
 
@@ -302,7 +317,10 @@ public class MappaFermateActivity extends AppCompatActivity {
                 // e sottile bordo arancione, allargato alla dimensione del testo.
                 PropertyFactory.iconImage(LABEL_BACKGROUND),
                 PropertyFactory.iconTextFit(Property.ICON_TEXT_FIT_BOTH),
-                PropertyFactory.iconTextFitPadding(new Float[]{6f, 9f, 6f, 9f}),
+                // Padding uniforme, controllato da una sola costante.
+                PropertyFactory.iconTextFitPadding(new Float[]{
+                        LABEL_PADDING_PX, LABEL_PADDING_PX,
+                        LABEL_PADDING_PX, LABEL_PADDING_PX}),
                 PropertyFactory.iconAllowOverlap(true),
                 PropertyFactory.iconIgnorePlacement(true),
                 PropertyFactory.textAllowOverlap(true),
@@ -336,7 +354,9 @@ public class MappaFermateActivity extends AppCompatActivity {
                 bitmap,
                 Collections.singletonList(new ImageStretches(23f, 25f)),
                 Collections.singletonList(new ImageStretches(17f, 19f)),
-                new ImageContent(7f, 6f, 41f, 30f));
+                // Contenuto esteso quasi al bordo: evitiamo un secondo padding
+                // nascosto. Resta 1 px per il tratto del bordo dello sprite.
+                new ImageContent(1f, 1f, 47f, 35f));
     }
 
     /**
@@ -353,7 +373,9 @@ public class MappaFermateActivity extends AppCompatActivity {
         final int screenHeight = mapView.getHeight();
         final int helpBottom = mapHelp == null ? dp(105)
                 : (int) (mapHelp.getY() + mapHelp.getHeight() + dp(8));
-        final float gap = dp(17);
+        // Stima geometrica tarata sulla versione verificata (2.5em -> 18dp).
+        // Segue automaticamente la stessa costante della distanza del testo.
+        final float gap = dp(LABEL_DISTANCE_EM * (18f / 2.5f));
         final float inset = dp(8);
 
         List<Feature> labelsRight = new ArrayList<>();
@@ -385,11 +407,11 @@ public class MappaFermateActivity extends AppCompatActivity {
             for (String line : lines) {
                 width = Math.max(width, paint.measureText(line));
             }
-            // Comprende il padding interno e il bordo dei nuovi riquadri.
-            // Stima prudente: meglio mostrare un'etichetta in meno che
-            // sovrapporne due o coprire un'altra fermata.
-            width += dp(30);
-            float height = lines.length * paint.getTextSize() * 1.45f + dp(18);
+            // 1 px fisso per bordo + padding impostato dall'utente;
+            // +4dp cautelativi per evitare urti tra riquadri vicini.
+            final float boxExtra = 2f * (1f + LABEL_PADDING_PX) + 4f;
+            width += dp(boxExtra);
+            float height = lines.length * paint.getTextSize() * 1.45f + dp(boxExtra);
             RectF right = new RectF(center.x + gap, center.y - height / 2f,
                     center.x + gap + width, center.y + height / 2f);
             RectF left = new RectF(center.x - gap - width, center.y - height / 2f,
