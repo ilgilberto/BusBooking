@@ -2,6 +2,8 @@ package info.mandarini.busbooking;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PointF;
@@ -23,6 +25,8 @@ import org.maplibre.android.MapLibre;
 import org.maplibre.android.camera.CameraUpdateFactory;
 import org.maplibre.android.geometry.LatLng;
 import org.maplibre.android.geometry.LatLngBounds;
+import org.maplibre.android.maps.ImageContent;
+import org.maplibre.android.maps.ImageStretches;
 import org.maplibre.android.maps.MapLibreMap;
 import org.maplibre.android.maps.MapView;
 import org.maplibre.android.style.expressions.Expression;
@@ -36,6 +40,7 @@ import org.maplibre.geojson.FeatureCollection;
 import org.maplibre.geojson.Point;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import info.mandarini.busbooking.persistence.entities.Fermata;
@@ -68,6 +73,8 @@ public class MappaFermateActivity extends AppCompatActivity {
     private static final String TAG = "BusBookingMap";
 
     private static final float LABEL_SIZE_SP = 11f;
+    // Fondo opaco per le etichette. Non interferisce con i CircleLayer delle fermate.
+    private static final String LABEL_BACKGROUND = "busbooking-label-white-box";
     private final List<Fermata> fermate = new ArrayList<>();
     private MapView mapView;
     private TextView mapHelp;
@@ -266,6 +273,7 @@ public class MappaFermateActivity extends AppCompatActivity {
         labelsLeftSource = new GeoJsonSource(LABELS_LEFT_SOURCE, empty);
         map.getStyle().addSource(labelsRightSource);
         map.getStyle().addSource(labelsLeftSource);
+        addLabelBackground(map);
 
         // Le collisioni con i nomi gia' presenti nella mappa Liberty avevano
         // nascosto tutte le denominazioni. Selezioniamo NOI solo le etichette
@@ -289,9 +297,46 @@ public class MappaFermateActivity extends AppCompatActivity {
                 PropertyFactory.textOffset(new Float[]{offsetX, 0f}),
                 PropertyFactory.textColor(Color.rgb(30, 40, 52)),
                 PropertyFactory.textHaloColor(Color.WHITE),
-                PropertyFactory.textHaloWidth(2f),
+                PropertyFactory.textHaloWidth(0f),
+                // Immagine a nove sezioni: sfondo bianco completamente opaco
+                // e sottile bordo arancione, allargato alla dimensione del testo.
+                PropertyFactory.iconImage(LABEL_BACKGROUND),
+                PropertyFactory.iconTextFit(Property.ICON_TEXT_FIT_BOTH),
+                PropertyFactory.iconTextFitPadding(new Float[]{6f, 9f, 6f, 9f}),
+                PropertyFactory.iconAllowOverlap(true),
+                PropertyFactory.iconIgnorePlacement(true),
                 PropertyFactory.textAllowOverlap(true),
                 PropertyFactory.textIgnorePlacement(true));
+    }
+
+    /**
+     * Disegna un unico piccolo fondo, condiviso da tutte le etichette.
+     * Le fasce centrali stretchX/stretchY sono deformabili; i bordi e gli
+     * angoli arrotondati restano integri, qualunque sia la lunghezza del nome.
+     *
+     * MapLibre espande l'immagine con iconTextFit(BOTH) senza aggiungere
+     * nuove View Android sopra la mappa.
+     */
+    private void addLabelBackground(MapLibreMap map) {
+        final int width = 48;
+        final int height = 36;
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
+        fill.setColor(Color.WHITE); // Alpha 255: rettangolo non trasparente.
+        canvas.drawRoundRect(new RectF(1, 1, width - 1, height - 1), 8f, 8f, fill);
+        Paint border = new Paint(Paint.ANTI_ALIAS_FLAG);
+        border.setStyle(Paint.Style.STROKE);
+        border.setStrokeWidth(2f);
+        border.setColor(Color.rgb(224, 114, 29));
+        canvas.drawRoundRect(new RectF(1, 1, width - 1, height - 1), 8f, 8f, border);
+
+        map.getStyle().addImage(
+                LABEL_BACKGROUND,
+                bitmap,
+                Collections.singletonList(new ImageStretches(23f, 25f)),
+                Collections.singletonList(new ImageStretches(17f, 19f)),
+                new ImageContent(7f, 6f, 41f, 30f));
     }
 
     /**
@@ -340,8 +385,11 @@ public class MappaFermateActivity extends AppCompatActivity {
             for (String line : lines) {
                 width = Math.max(width, paint.measureText(line));
             }
-            width += dp(12); // Tolleranza per il font effettivo Noto Sans.
-            float height = lines.length * paint.getTextSize() * 1.45f + dp(6);
+            // Comprende il padding interno e il bordo dei nuovi riquadri.
+            // Stima prudente: meglio mostrare un'etichetta in meno che
+            // sovrapporne due o coprire un'altra fermata.
+            width += dp(30);
+            float height = lines.length * paint.getTextSize() * 1.45f + dp(18);
             RectF right = new RectF(center.x + gap, center.y - height / 2f,
                     center.x + gap + width, center.y + height / 2f);
             RectF left = new RectF(center.x - gap - width, center.y - height / 2f,
