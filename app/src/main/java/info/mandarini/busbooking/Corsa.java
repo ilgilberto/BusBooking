@@ -36,6 +36,7 @@ import com.bumptech.glide.signature.ObjectKey;
 
 import org.apache.commons.lang3.StringUtils;
 
+import info.mandarini.busbooking.logging.AppLogger;
 import info.mandarini.busbooking.threads.Cronometro;
 
 public class Corsa extends AppCompatActivity {
@@ -164,7 +165,7 @@ public class Corsa extends AppCompatActivity {
         float density = getResources().getDisplayMetrics().density;
         int withDp = Math.round(Integer.parseInt(getString(R.string.widthImageBanner))/density);
         int heightDp = Math.round(Integer.parseInt(getString(R.string.heightImageBanner))/density);
-        Log.d("ECCOLO",""+heightDp);
+
         bannerImageView.setMinimumWidth(withDp);
         bannerImageView.setMinimumHeight(height);
         bannerImageView.setOnClickListener(view -> {
@@ -183,7 +184,7 @@ public class Corsa extends AppCompatActivity {
             public void run() {
                 String url = baseUrlBanner + currentIndex + extensionImageBanner;
                 long sixHourSignature = System.currentTimeMillis() / (cacheLifeInHours * 60 * 60 * 1000);
-                Log.d("SLIDESHOW", "Carico immagine: " + url);
+                AppLogger.debug("SLIDESHOW", "Carico immagine: " + url);
 
                 Glide.with(Corsa.this)
                         .load(url)

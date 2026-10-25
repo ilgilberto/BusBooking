@@ -41,6 +41,7 @@ import androidx.appcompat.app.AlertDialog;
 import java.util.ArrayList;
 import java.util.List;
 
+import info.mandarini.busbooking.logging.AppLogger;
 import info.mandarini.busbooking.persistence.entities.Fermata;
 import info.mandarini.busbooking.persistence.repositories.FavoritesDataBase;
 
@@ -206,7 +207,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 // ma non vengono inserite tra i segnaposto della mappa.
                 double lon = o.optDouble("longitudine", Double.NaN);
                 double lat = o.optDouble("latitudine", Double.NaN);
-                Log.i("Coordinate","Latitudine: " + lat + " longitudine: " + lon);
+                AppLogger.debug("Coordinate","Latitudine: " + lat + " longitudine: " + lon);
                 if (!Double.isNaN(lat) && !Double.isInfinite(lat) && lat >= -90 && lat <= 90
                         && !Double.isNaN(lon) && !Double.isInfinite(lon) && lon >= -180 && lon <= 180) {
                     f.longitudine = lon;
@@ -230,9 +231,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     });
                     display.addView(t);
                     //setContentView(findViewById(R.id.display));
-                    Log.i("Aggiunto ", t.getText() + "");
+                    AppLogger.info("Aggiunto ", t.getText() + "");
                 } catch (Exception e) {
-                    Log.e("prova", "prova", e);
+                    AppLogger.error("Errore", "writeJson", e);
                 }
             }
 
@@ -247,7 +248,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 display.addView(mappa);
             }
         } catch (JSONException e) {
-            Log.e("BusBooking", "Impossibile leggere le fermate", e);
+            AppLogger.error("BusBooking", "Impossibile leggere le fermate", e);
         }
     }
 
@@ -364,14 +365,16 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     public void onStatusChanged(String s, int i, Bundle bundle) {
-        Log.v("CIAO", "Status changed: " + s);
+        AppLogger.info("Status", "Status changed: " + s);
     }
 
+    @Override
     public void onProviderEnabled(@NonNull String s) {
-        Log.i("MainActivity", "Provider abilitato: " + s);
+        AppLogger.info("MainActivity", "Provider abilitato: " + s);
     }
 
+    @Override
     public void onProviderDisabled(@NonNull String s) {
-        Log.e("MainActivity", "Provider disabilitato: " + s);
+        AppLogger.error("MainActivity", "Provider disabilitato: " + s);
     }
 }

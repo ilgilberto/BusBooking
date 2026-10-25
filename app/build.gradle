@@ -13,6 +13,10 @@ android {
         versionCode 36
         versionName "1.8.0"
 
+        buildFeatures {
+            buildConfig true
+        }
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 

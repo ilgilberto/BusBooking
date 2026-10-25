@@ -30,6 +30,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Locale;
 
+import info.mandarini.busbooking.logging.AppLogger;
+
 public class TitleActivity extends AppCompatActivity {
 
     private boolean auto = false;
@@ -93,7 +95,7 @@ public class TitleActivity extends AppCompatActivity {
                 auto = false;
                 waitWatchTitle(3000);
             } catch (Exception e) {
-                Log.e("TitleActivity","Errore",e);
+                AppLogger.error("TitleActivity","Errore",e);
             }
         }
 
@@ -113,7 +115,7 @@ public class TitleActivity extends AppCompatActivity {
                         goToStartPage();
                     }
                 } catch (Exception e) {
-                    Log.e("start", "Si è verificato un errore", e);
+                    AppLogger.error("start", "Si è verificato un errore", e);
                 }
 
             }
@@ -164,7 +166,7 @@ public class TitleActivity extends AppCompatActivity {
             if (!f.exists()) {save(f,in);}
 
         } catch (Exception e) {
-            Log.e("TitleActivity","Errore mentro cerco di copiare il file delle istruzioni",e);
+            AppLogger.error("TitleActivity","Errore mentro cerco di copiare il file delle istruzioni",e);
         }
         if (f!=null && f.exists()) {
         startPDF(f);}

@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import info.mandarini.busbooking.logging.AppLogger;
 import info.mandarini.busbooking.persistence.entities.Fermata;
 
 /**
@@ -115,7 +116,7 @@ public class MappaFermateActivity extends AppCompatActivity {
                 item.put("longitudine", f.longitudine);
                 json.put(item);
             } catch (JSONException e) {
-                Log.w(TAG, "Impossibile serializzare una fermata", e);
+                AppLogger.warning(TAG, "Impossibile serializzare una fermata", e);
             }
         }
         Intent intent = new Intent(context, MappaFermateActivity.class);
@@ -156,7 +157,7 @@ public class MappaFermateActivity extends AppCompatActivity {
                 fermate.add(f);
             }
         } catch (JSONException e) {
-            Log.e(TAG, "Dati mappa non validi", e);
+            AppLogger.error(TAG, "Dati mappa non validi", e);
         }
         if (fermate.isEmpty()) {
             Toast.makeText(this, R.string.map_no_stops, Toast.LENGTH_SHORT).show();
@@ -267,7 +268,7 @@ public class MappaFermateActivity extends AppCompatActivity {
                 }, 350L);
             }, 500L);
         });
-        Log.i(TAG, "GeoJSON nativo: " + fermate.size() + " fermate disponibili");
+        AppLogger.info(TAG, "GeoJSON nativo: " + fermate.size() + " fermate disponibili");
     }
 
     private Feature makeFeature(Fermata f) {
@@ -435,7 +436,7 @@ public class MappaFermateActivity extends AppCompatActivity {
                 labelsRight.toArray(new Feature[0])));
         labelsLeftSource.setGeoJson(FeatureCollection.fromFeatures(
                 labelsLeft.toArray(new Feature[0])));
-        Log.d(TAG, "Fermate=" + fermate.size() + " | etichette leggibili="
+        AppLogger.debug(TAG, "Fermate=" + fermate.size() + " | etichette leggibili="
                 + (labelsRight.size() + labelsLeft.size())
                 + " | zoom=" + map.getCameraPosition().zoom);
     }

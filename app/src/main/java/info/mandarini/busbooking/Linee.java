@@ -134,7 +134,6 @@ public class Linee extends AppCompatActivity {
                 final String codiceLinea = o.getString("codice");
                 t.setText(codiceLinea);
                 JSONArray corse = o.getJSONArray("corse");
-                //Log.i("log",o.getString("denominazione")+"");
 
                 t.setBackgroundColor(Color.GREEN);
                 t.setTextColor(Color.BLUE);
